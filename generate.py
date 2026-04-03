@@ -34,6 +34,16 @@ def yaml_to_d2(data: dict) -> str:
     """Convert a functional decomposition YAML structure to a d2 definition."""
     lines = []
 
+    # d2 configuration
+    lines.append("vars: {")
+    lines.append("  d2-config: {")
+    lines.append("    layout-engine: elk")
+    lines.append("    # Terminal theme code")
+    lines.append("    theme-id: 300")
+    lines.append("  }")
+    lines.append("}")
+    lines.append("")
+
     # Style: top-down layout for hierarchy
     lines.append("direction: down")
     lines.append("")
