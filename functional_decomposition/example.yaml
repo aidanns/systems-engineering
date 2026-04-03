@@ -1,0 +1,16 @@
+name: Example System
+functions:
+  - name: Power Management
+    functions:
+      - name: Generate Power
+      - name: Store Power
+      - name: Distribute Power
+  - name: Thermal Management
+    functions:
+      - name: Detect Temperature
+      - name: Cool Components
+  - name: Data Processing
+    functions:
+      - name: Collect Data
+      - name: Transform Data
+      - name: Store Data
