@@ -91,6 +91,34 @@ def yaml_to_d2(data: dict) -> str:
     return "\n".join(lines)
 
 
+def collect_functions(function: dict, parent_name: str, rows: list[tuple[str, str, str]]):
+    """Recursively collect function rows as (parent, name, description) tuples."""
+    name = function["name"]
+    description = function.get("description", "")
+    rows.append((parent_name, name, description))
+    for child in function.get("functions", []):
+        collect_functions(child, name, rows)
+
+
+def yaml_to_markdown(data: dict) -> str:
+    """Convert a functional decomposition YAML structure to a markdown table."""
+    rows: list[tuple[str, str, str]] = []
+    root_name = data["name"]
+    for function in data.get("functions", []):
+        collect_functions(function, root_name, rows)
+
+    lines = [
+        f"# {root_name}",
+        "",
+        "| Parent | Function | Description |",
+        "|--------|----------|-------------|",
+    ]
+    for parent, name, description in rows:
+        lines.append(f"| {parent} | {name} | {description} |")
+
+    return "\n".join(lines) + "\n"
+
+
 def render_d2(d2_path: Path, svg_path: Path):
     """Run d2 to render a .d2 file to SVG."""
     try:
@@ -110,19 +138,24 @@ def render_d2(d2_path: Path, svg_path: Path):
 
 
 def process_file(yaml_path: Path, output_dir: Path):
-    """Process a single YAML file: generate .d2 and .svg."""
+    """Process a single YAML file: generate .d2, .svg, and .md."""
     data = load_yaml(yaml_path)
-    d2_content = yaml_to_d2(data)
 
     stem = yaml_path.stem
     d2_path = output_dir / f"{stem}.d2"
     svg_path = output_dir / f"{stem}.svg"
+    md_path = output_dir / f"{stem}.md"
 
+    d2_content = yaml_to_d2(data)
     d2_path.write_text(d2_content)
     print(f"Written: {d2_path}")
 
     render_d2(d2_path, svg_path)
     print(f"Written: {svg_path}")
+
+    md_content = yaml_to_markdown(data)
+    md_path.write_text(md_content)
+    print(f"Written: {md_path}")
 
 
 def run_function_command(args):
