@@ -10,6 +10,9 @@ CLI tools for generating systems engineering diagrams from YAML definitions, ren
 - `functional_decomposition/` — YAML files defining functional decomposition hierarchies.
 - `output/` — Generated `.d2` and `.svg` files (gitignored).
 - `requirements.txt` — Python dependencies (pyyaml).
+- `scripts/build.sh` — Creates virtualenv and installs dependencies.
+- `scripts/test.sh` — Validates YAML files and d2 generation.
+- `scripts/generate.sh` — Generates all diagrams from `functional_decomposition/` to `output/`.
 
 ## YAML Schema for Functional Decomposition
 
@@ -25,14 +28,19 @@ functions:
 
 ```bash
 # Set up virtualenv and install dependencies
-python3 -m venv .venv
-.venv/bin/pip install -r requirements.txt
+scripts/build.sh
 
-# Generate diagrams from a single file
+# Run tests
+scripts/test.sh
+
+# Generate all diagrams
+scripts/generate.sh
+
+# Generate to a custom output directory
+scripts/generate.sh /path/to/output
+
+# Generate diagrams from a single file (direct)
 .venv/bin/python generate.py functional_decomposition/example.yaml -o output/
-
-# Generate diagrams from all files in a directory
-.venv/bin/python generate.py functional_decomposition/ -o output/
 ```
 
 ## Dependencies
@@ -44,3 +52,4 @@ python3 -m venv .venv
 ## Conventions
 
 - Use [conventional commits](https://www.conventionalcommits.org/) for all git commits (e.g. `feat:`, `fix:`, `docs:`, `chore:`).
+- Before finishing work, confirm that `scripts/build.sh`, `scripts/test.sh`, and `scripts/generate.sh` all run successfully.
