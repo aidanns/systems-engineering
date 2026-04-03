@@ -18,16 +18,35 @@ def load_yaml(path: Path) -> dict:
         return yaml.safe_load(f)
 
 
+def is_leaf(function: dict) -> bool:
+    """Return True if this function has no children."""
+    return not function.get("functions")
+
+
 def function_to_d2(function: dict, parent_id: str, lines: list[str], counter: list[int]):
     """Recursively convert a function node and its children to d2 lines."""
     node_id = f"f{counter[0]}"
     counter[0] += 1
+    children = function.get("functions", [])
 
     lines.append(f"{node_id}: {function['name']}")
     lines.append(f"{parent_id} -> {node_id}")
 
-    for child in function.get("functions", []):
-        function_to_d2(child, node_id, lines, counter)
+    if children and all(is_leaf(c) for c in children):
+        # All children are leaves — render them in a separate grid container.
+        container_id = f"{node_id}_container"
+        lines.append(f"{container_id}: \"\" {{")
+        lines.append(f"  grid-columns: 1")
+        lines.append(f"  grid-gap: 0")
+        for child in children:
+            child_id = f"f{counter[0]}"
+            counter[0] += 1
+            lines.append(f"  {child_id}: {child['name']}")
+        lines.append(f"}}")
+        lines.append(f"{node_id} -> {container_id}")
+    else:
+        for child in children:
+            function_to_d2(child, node_id, lines, counter)
 
 
 def yaml_to_d2(data: dict) -> str:
