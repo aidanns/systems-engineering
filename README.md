@@ -34,13 +34,17 @@ This project provides CLI tools to generate systems engineering diagrams from YA
 name: System Name
 functions:
   - name: Function A
+    description: Description of Function A.
     recently_updated: false
     functions:
       - name: Sub-function A1
+        description: Description of Sub-function A1.
         recently_updated: true
       - name: Sub-function A2
+        description: Description of Sub-function A2.
         recently_updated: false
   - name: Function B
+    description: Description of Function B.
     recently_updated: false
 ```
 
