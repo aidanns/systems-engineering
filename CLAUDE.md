@@ -40,3 +40,7 @@ python3 -m venv .venv
 - Python 3.10+
 - d2 (must be on PATH)
 - pyyaml
+
+## Conventions
+
+- Use [conventional commits](https://www.conventionalcommits.org/) for all git commits (e.g. `feat:`, `fix:`, `docs:`, `chore:`).
