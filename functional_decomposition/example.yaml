@@ -1,16 +1,27 @@
 name: Example System
 functions:
   - name: Power Management
+    recently_updated: false
     functions:
       - name: Generate Power
+        recently_updated: false
       - name: Store Power
+        recently_updated: true
       - name: Distribute Power
+        recently_updated: false
   - name: Thermal Management
+    recently_updated: true
     functions:
       - name: Detect Temperature
+        recently_updated: false
       - name: Cool Components
+        recently_updated: true
   - name: Data Processing
+    recently_updated: false
     functions:
       - name: Collect Data
+        recently_updated: false
       - name: Transform Data
+        recently_updated: false
       - name: Store Data
+        recently_updated: false

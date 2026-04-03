@@ -20,8 +20,10 @@ CLI tools for generating systems engineering diagrams from YAML definitions, ren
 name: <root system name>
 functions:
   - name: <function name>
-    functions:          # optional nested children
+    recently_updated: <bool>  # optional, default false
+    functions:                # optional nested children
       - name: <sub-function name>
+        recently_updated: <bool>
 ```
 
 ## Commands
