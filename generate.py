@@ -125,23 +125,8 @@ def process_file(yaml_path: Path, output_dir: Path):
     print(f"Written: {svg_path}")
 
 
-def main():
-    parser = argparse.ArgumentParser(
-        description="Generate functional decomposition diagrams from YAML definitions."
-    )
-    parser.add_argument(
-        "input",
-        type=Path,
-        help="YAML file or directory containing YAML files.",
-    )
-    parser.add_argument(
-        "-o", "--output",
-        type=Path,
-        default=Path("output"),
-        help="Output directory for .d2 and .svg files (default: output/).",
-    )
-    args = parser.parse_args()
-
+def run_function_command(args):
+    """Handle the 'function' subcommand."""
     input_path: Path = args.input
     output_dir: Path = args.output
 
@@ -163,6 +148,34 @@ def main():
     else:
         print(f"Error: {input_path} is not a file or directory.", file=sys.stderr)
         sys.exit(1)
+
+
+def main():
+    parser = argparse.ArgumentParser(
+        description="Generate systems engineering diagrams from YAML definitions."
+    )
+    subparsers = parser.add_subparsers(dest="command", required=True)
+
+    # 'function' subcommand
+    function_parser = subparsers.add_parser(
+        "function",
+        help="Generate functional decomposition diagrams.",
+    )
+    function_parser.add_argument(
+        "input",
+        type=Path,
+        help="YAML file or directory containing YAML files.",
+    )
+    function_parser.add_argument(
+        "-o", "--output",
+        type=Path,
+        default=Path("output"),
+        help="Output directory for .d2 and .svg files (default: output/).",
+    )
+    function_parser.set_defaults(func=run_function_command)
+
+    args = parser.parse_args()
+    args.func(args)
 
 
 if __name__ == "__main__":

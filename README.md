@@ -52,10 +52,10 @@ functions:
 
 ```bash
 # Render a single file
-.venv/bin/python generate.py functional_decomposition/example.yaml -o output/
+.venv/bin/python generate.py function functional_decomposition/example.yaml -o output/
 
 # Render all files in a directory
-.venv/bin/python generate.py functional_decomposition/ -o output/
+.venv/bin/python generate.py function functional_decomposition/ -o output/
 ```
 
 This produces `.d2` and `.svg` files in the output directory.

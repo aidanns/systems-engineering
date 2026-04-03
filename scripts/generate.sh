@@ -18,6 +18,6 @@ fi
 OUTPUT_DIR="${1:-$REPO_ROOT/output}"
 
 echo "Generating diagrams to $OUTPUT_DIR..."
-"$PYTHON" "$REPO_ROOT/generate.py" "$REPO_ROOT/functional_decomposition/" -o "$OUTPUT_DIR"
+"$PYTHON" "$REPO_ROOT/generate.py" function "$REPO_ROOT/functional_decomposition/" -o "$OUTPUT_DIR"
 
 echo "Done."
