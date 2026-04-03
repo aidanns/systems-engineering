@@ -120,11 +120,11 @@ def yaml_to_markdown(data: dict) -> str:
     return "\n".join(lines) + "\n"
 
 
-def render_d2(d2_path: Path, svg_path: Path):
-    """Run d2 to render a .d2 file to SVG."""
+def render_d2(d2_path: Path, output_path: Path):
+    """Run d2 to render a .d2 file to the given output format (determined by extension)."""
     try:
         result = subprocess.run(
-            ["d2", str(d2_path), str(svg_path)],
+            ["d2", str(d2_path), str(output_path)],
             capture_output=True,
             text=True,
         )
@@ -139,12 +139,13 @@ def render_d2(d2_path: Path, svg_path: Path):
 
 
 def process_file(yaml_path: Path, output_dir: Path):
-    """Process a single YAML file: generate .d2, .svg, and .md."""
+    """Process a single YAML file: generate .d2, .svg, .png, and .md."""
     data = load_yaml(yaml_path)
 
     stem = yaml_path.stem
     d2_path = output_dir / f"{stem}.d2"
     svg_path = output_dir / f"{stem}.svg"
+    png_path = output_dir / f"{stem}.png"
     md_path = output_dir / f"{stem}.md"
 
     d2_content = yaml_to_d2(data)
@@ -153,6 +154,9 @@ def process_file(yaml_path: Path, output_dir: Path):
 
     render_d2(d2_path, svg_path)
     print(f"Written: {svg_path}")
+
+    render_d2(d2_path, png_path)
+    print(f"Written: {png_path}")
 
     md_content = yaml_to_markdown(data)
     md_path.write_text(md_content)
