@@ -30,6 +30,9 @@ def function_to_d2(function: dict, parent_id: str, lines: list[str], counter: li
     children = function.get("functions", [])
 
     lines.append(f"{node_id}: {function['name']}")
+    lines.append(f"{node_id}.width: 250")
+    if function.get("recently_updated"):
+        lines.append(f"{node_id}.style.stroke: red")
     lines.append(f"{parent_id} -> {node_id}")
 
     if children and all(is_leaf(c) for c in children):
@@ -37,11 +40,18 @@ def function_to_d2(function: dict, parent_id: str, lines: list[str], counter: li
         container_id = f"{node_id}_container"
         lines.append(f"{container_id}: \"\" {{")
         lines.append(f"  grid-columns: 1")
-        lines.append(f"  grid-gap: 0")
+        lines.append(f"  grid-gap: 5")
+        lines.append(f"  style: {{")
+        lines.append(f"    stroke-width: 0")
+        lines.append(f"    fill: transparent")
+        lines.append(f"  }}")
         for child in children:
             child_id = f"f{counter[0]}"
             counter[0] += 1
             lines.append(f"  {child_id}: {child['name']}")
+            lines.append(f"  {child_id}.width: 250")
+            if child.get("recently_updated"):
+                lines.append(f"  {child_id}.style.stroke: red")
         lines.append(f"}}")
         lines.append(f"{node_id} -> {container_id}")
     else:
@@ -70,6 +80,7 @@ def yaml_to_d2(data: dict) -> str:
     # Root node
     root_id = "root"
     lines.append(f"{root_id}: {data['name']}")
+    lines.append(f"{root_id}.width: 250")
     lines.append("")
 
     counter = [0]
