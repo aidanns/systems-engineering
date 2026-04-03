@@ -23,16 +23,21 @@ def is_leaf(function: dict) -> bool:
     return not function.get("functions")
 
 
+def emit_node(lines: list[str], node_id: str, function: dict, indent: str = ""):
+    """Emit d2 lines for a single function node."""
+    lines.append(f"{indent}{node_id}: {function['name']}")
+    lines.append(f"{indent}{node_id}.width: 250")
+    if function.get("recently_updated"):
+        lines.append(f"{indent}{node_id}.style.stroke: red")
+
+
 def function_to_d2(function: dict, parent_id: str, lines: list[str], counter: list[int]):
     """Recursively convert a function node and its children to d2 lines."""
     node_id = f"f{counter[0]}"
     counter[0] += 1
     children = function.get("functions", [])
 
-    lines.append(f"{node_id}: {function['name']}")
-    lines.append(f"{node_id}.width: 250")
-    if function.get("recently_updated"):
-        lines.append(f"{node_id}.style.stroke: red")
+    emit_node(lines, node_id, function)
     lines.append(f"{parent_id} -> {node_id}")
 
     if children and all(is_leaf(c) for c in children):
@@ -48,10 +53,7 @@ def function_to_d2(function: dict, parent_id: str, lines: list[str], counter: li
         for child in children:
             child_id = f"f{counter[0]}"
             counter[0] += 1
-            lines.append(f"  {child_id}: {child['name']}")
-            lines.append(f"  {child_id}.width: 250")
-            if child.get("recently_updated"):
-                lines.append(f"  {child_id}.style.stroke: red")
+            emit_node(lines, child_id, child, indent="  ")
         lines.append(f"}}")
         lines.append(f"{node_id} -> {container_id}")
     else:
@@ -79,8 +81,7 @@ def yaml_to_d2(data: dict) -> str:
 
     # Root node
     root_id = "root"
-    lines.append(f"{root_id}: {data['name']}")
-    lines.append(f"{root_id}.width: 250")
+    emit_node(lines, root_id, data)
     lines.append("")
 
     counter = [0]
