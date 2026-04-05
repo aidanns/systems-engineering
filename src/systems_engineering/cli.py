@@ -82,15 +82,19 @@ def is_leaf(function: dict) -> bool:
     return not function.get("functions")
 
 
-def emit_node(lines: list[str], node_id: str, function: dict, indent: str = ""):
+def emit_node(lines: list[str], node_id: str, node: dict, indent: str = "",
+              shape: str | None = None):
     """Emit d2 lines for a single labeled node."""
-    lines.append(f"{indent}{node_id}: {function['name']}")
+    lines.append(f"{indent}{node_id}: {node['name']}")
     lines.append(f"{indent}{node_id}.width: 250")
-    if function.get("recently_updated"):
+    if shape:
+        lines.append(f"{indent}{node_id}.shape: {shape}")
+    if node.get("recently_updated"):
         lines.append(f"{indent}{node_id}.style.stroke: red")
 
 
-def emit_leaf_container(lines: list[str], parent_id: str, children: list[dict], counter: list[int]):
+def emit_container(lines: list[str], parent_id: str, children: list[dict],
+                   counter: list[int], prefix: str = "f", shape: str | None = None):
     """Emit a grid container holding leaf children, connected to the parent node."""
     container_id = f"{parent_id}_container"
     lines.append(f"{container_id}: \"\" {{")
@@ -101,9 +105,9 @@ def emit_leaf_container(lines: list[str], parent_id: str, children: list[dict], 
     lines.append(f"    fill: transparent")
     lines.append(f"  }}")
     for child in children:
-        child_id = f"f{counter[0]}"
+        child_id = f"{prefix}{counter[0]}"
         counter[0] += 1
-        emit_node(lines, child_id, child, indent="  ")
+        emit_node(lines, child_id, child, indent="  ", shape=shape)
     lines.append(f"}}")
     lines.append(f"{parent_id} -> {container_id}")
 
@@ -118,17 +122,14 @@ def function_to_d2(function: dict, parent_id: str, lines: list[str], counter: li
     lines.append(f"{parent_id} -> {node_id}")
 
     if children and all(is_leaf(c) for c in children):
-        emit_leaf_container(lines, node_id, children, counter)
+        emit_container(lines, node_id, children, counter)
     else:
         for child in children:
             function_to_d2(child, node_id, lines, counter)
 
 
-def yaml_to_d2(data: dict) -> str:
-    """Convert a functional decomposition YAML structure to a d2 definition."""
-    lines = []
-
-    # d2 configuration
+def _emit_d2_preamble(lines: list[str], data: dict):
+    """Emit the common d2 config block, direction, and root node."""
     lines.append("vars: {")
     lines.append("  d2-config: {")
     lines.append("    layout-engine: elk")
@@ -137,20 +138,23 @@ def yaml_to_d2(data: dict) -> str:
     lines.append("  }")
     lines.append("}")
     lines.append("")
-
-    # Style: top-down layout for hierarchy
     lines.append("direction: down")
     lines.append("")
-
-    # Root node
-    root_id = "root"
-    emit_node(lines, root_id, data)
+    emit_node(lines, "root", data)
     lines.append("")
+
+
+def yaml_to_d2(data: dict) -> str:
+    """Convert a functional decomposition YAML structure to a d2 definition."""
+    lines = []
+    _emit_d2_preamble(lines, data)
+
+    root_id = "root"
 
     children = data.get("functions", [])
     counter = [0]
     if children and all(is_leaf(c) for c in children):
-        emit_leaf_container(lines, root_id, children, counter)
+        emit_container(lines, root_id, children, counter)
         lines.append("")
     else:
         for function in children:
@@ -158,31 +162,6 @@ def yaml_to_d2(data: dict) -> str:
             lines.append("")
 
     return "\n".join(lines)
-
-
-def emit_ci_node(lines: list[str], node_id: str, ci: dict, indent: str = ""):
-    """Emit d2 lines for a single configuration item node (circle shape)."""
-    lines.append(f"{indent}{node_id}: {ci['name']}")
-    lines.append(f"{indent}{node_id}.width: 250")
-    lines.append(f"{indent}{node_id}.shape: circle")
-
-
-def emit_ci_container(lines: list[str], parent_id: str, cis: list[dict], counter: list[int]):
-    """Emit a grid container holding CI children, connected to the parent node."""
-    container_id = f"{parent_id}_container"
-    lines.append(f"{container_id}: \"\" {{")
-    lines.append(f"  grid-columns: 1")
-    lines.append(f"  grid-gap: 5")
-    lines.append(f"  style: {{")
-    lines.append(f"    stroke-width: 0")
-    lines.append(f"    fill: transparent")
-    lines.append(f"  }}")
-    for ci in cis:
-        ci_id = f"p{counter[0]}"
-        counter[0] += 1
-        emit_ci_node(lines, ci_id, ci, indent="  ")
-    lines.append(f"}}")
-    lines.append(f"{parent_id} -> {container_id}")
 
 
 def component_to_d2(component: dict, parent_id: str, lines: list[str], counter: list[int]):
@@ -200,32 +179,15 @@ def component_to_d2(component: dict, parent_id: str, lines: list[str], counter: 
         for child in sub_components:
             component_to_d2(child, node_id, lines, counter)
     if cis:
-        emit_ci_container(lines, node_id, cis, counter)
+        emit_container(lines, node_id, cis, counter, prefix="p", shape="circle")
 
 
 def product_yaml_to_d2(data: dict) -> str:
     """Convert a product breakdown YAML structure to a d2 definition."""
     lines = []
+    _emit_d2_preamble(lines, data)
 
-    # d2 configuration
-    lines.append("vars: {")
-    lines.append("  d2-config: {")
-    lines.append("    layout-engine: elk")
-    lines.append("    # Terminal theme code")
-    lines.append("    theme-id: 300")
-    lines.append("  }")
-    lines.append("}")
-    lines.append("")
-
-    # Style: top-down layout for hierarchy
-    lines.append("direction: down")
-    lines.append("")
-
-    # Root node
     root_id = "root"
-    emit_node(lines, root_id, data)
-    lines.append("")
-
     counter = [0]
     for component in data.get("components", []):
         component_to_d2(component, root_id, lines, counter)
@@ -348,6 +310,32 @@ def render_d2(d2_path: Path, output_path: Path):
         sys.exit(1)
 
 
+def _write_outputs(data: dict, yaml_path: Path, output_dir: Path, suffix: str,
+                   to_d2, to_md, to_csv):
+    """Generate .d2, .svg, .png, .md, and .csv output files."""
+    stem = yaml_path.stem
+    d2_path = output_dir / f"{stem}_{suffix}.d2"
+    svg_path = output_dir / f"{stem}_{suffix}.svg"
+    png_path = output_dir / f"{stem}_{suffix}.png"
+    md_path = output_dir / f"{stem}_{suffix}.md"
+    csv_path = output_dir / f"{stem}_{suffix}.csv"
+
+    d2_path.write_text(to_d2(data))
+    print(f"Written: {d2_path}")
+
+    render_d2(d2_path, svg_path)
+    print(f"Written: {svg_path}")
+
+    render_d2(d2_path, png_path)
+    print(f"Written: {png_path}")
+
+    md_path.write_text(to_md(data))
+    print(f"Written: {md_path}")
+
+    csv_path.write_text(to_csv(data))
+    print(f"Written: {csv_path}")
+
+
 def process_file(yaml_path: Path, output_dir: Path, root: str | None = None,
                   filters: list[str] | None = None, include_descendants: bool = False):
     """Process a single YAML file: generate .d2, .svg, .png, .md, and .csv."""
@@ -363,60 +351,15 @@ def process_file(yaml_path: Path, output_dir: Path, root: str | None = None,
     if filters:
         data = filter_tree(data, filters, include_descendants)
 
-    stem = yaml_path.stem
-    d2_path = output_dir / f"{stem}.d2"
-    svg_path = output_dir / f"{stem}.svg"
-    png_path = output_dir / f"{stem}.png"
-    md_path = output_dir / f"{stem}.md"
-
-    d2_content = yaml_to_d2(data)
-    d2_path.write_text(d2_content)
-    print(f"Written: {d2_path}")
-
-    render_d2(d2_path, svg_path)
-    print(f"Written: {svg_path}")
-
-    render_d2(d2_path, png_path)
-    print(f"Written: {png_path}")
-
-    md_content = yaml_to_markdown(data)
-    md_path.write_text(md_content)
-    print(f"Written: {md_path}")
-
-    csv_path = output_dir / f"{stem}.csv"
-    csv_content = yaml_to_csv(data)
-    csv_path.write_text(csv_content)
-    print(f"Written: {csv_path}")
+    _write_outputs(data, yaml_path, output_dir, "functions",
+                   yaml_to_d2, yaml_to_markdown, yaml_to_csv)
 
 
 def process_product_file(yaml_path: Path, output_dir: Path):
     """Process a single product breakdown YAML file: generate .d2, .svg, .png, .md, and .csv."""
     data = load_yaml(yaml_path)
-
-    stem = yaml_path.stem
-    d2_path = output_dir / f"{stem}_products.d2"
-    svg_path = output_dir / f"{stem}_products.svg"
-    png_path = output_dir / f"{stem}_products.png"
-    md_path = output_dir / f"{stem}_products.md"
-    csv_path = output_dir / f"{stem}_products.csv"
-
-    d2_content = product_yaml_to_d2(data)
-    d2_path.write_text(d2_content)
-    print(f"Written: {d2_path}")
-
-    render_d2(d2_path, svg_path)
-    print(f"Written: {svg_path}")
-
-    render_d2(d2_path, png_path)
-    print(f"Written: {png_path}")
-
-    md_content = product_yaml_to_markdown(data)
-    md_path.write_text(md_content)
-    print(f"Written: {md_path}")
-
-    csv_content = product_yaml_to_csv(data)
-    csv_path.write_text(csv_content)
-    print(f"Written: {csv_path}")
+    _write_outputs(data, yaml_path, output_dir, "products",
+                   product_yaml_to_d2, product_yaml_to_markdown, product_yaml_to_csv)
 
 
 def collect_leaf_function_names(data: dict) -> set[str]:
@@ -493,32 +436,42 @@ def run_product_verify_command(args):
         sys.exit(1)
 
 
-def run_function_command(args):
-    """Handle the 'function' subcommand."""
-    input_path: Path = args.input
-    output_dir: Path = args.output
-
+def _dispatch_yaml_files(input_path: Path, output_dir: Path, process_fn):
+    """Validate input, create output dir, and dispatch YAML files to process_fn."""
     if not input_path.exists():
         print(f"Error: {input_path} does not exist.", file=sys.stderr)
         sys.exit(1)
 
     output_dir.mkdir(parents=True, exist_ok=True)
 
-    root = args.root
-    filters = args.filter
-    include_descendants = args.include_descendants
-
     if input_path.is_file():
-        process_file(input_path, output_dir, root, filters, include_descendants)
+        process_fn(input_path, output_dir)
     elif input_path.is_dir():
         default_file = resolve_directory_to_file(input_path, "functional_decomposition")
         if not default_file.exists():
             print(f"Error: no functional_decomposition.yaml found in {input_path}.", file=sys.stderr)
             sys.exit(1)
-        process_file(default_file, output_dir, root, filters, include_descendants)
+        process_fn(default_file, output_dir)
     else:
         print(f"Error: {input_path} is not a file or directory.", file=sys.stderr)
         sys.exit(1)
+
+
+def run_product_diagram_command(args):
+    """Handle the 'product diagram' subcommand."""
+    _dispatch_yaml_files(args.input, args.output, process_product_file)
+
+
+def run_function_command(args):
+    """Handle the 'function' subcommand."""
+    root = args.root
+    filters = args.filter
+    include_descendants = args.include_descendants
+
+    def process_fn(yaml_path, output_dir):
+        process_file(yaml_path, output_dir, root, filters, include_descendants)
+
+    _dispatch_yaml_files(args.input, args.output, process_fn)
 
 
 def main():
@@ -596,6 +549,24 @@ def main():
         help="Functional decomposition YAML file or directory (expects functional_decomposition.yaml).",
     )
     verify_parser.set_defaults(func=run_product_verify_command)
+
+    # 'product diagram' subcommand
+    diagram_parser = product_subparsers.add_parser(
+        "diagram",
+        help="Generate product breakdown diagrams.",
+    )
+    diagram_parser.add_argument(
+        "input",
+        type=Path,
+        help="Product breakdown YAML file or directory.",
+    )
+    diagram_parser.add_argument(
+        "-o", "--output",
+        type=Path,
+        default=Path("output"),
+        help="Output directory (default: output/).",
+    )
+    diagram_parser.set_defaults(func=run_product_diagram_command)
 
     args = parser.parse_args()
     args.func(args)
