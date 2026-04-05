@@ -46,7 +46,7 @@ systems-engineering --version
 
 ### Functional Decomposition
 
-1. Create a YAML definition file in `functional_decomposition/`:
+1. Create a YAML definition file in `example/`:
 
 ```yaml
 name: System Name
@@ -70,26 +70,26 @@ functions:
 
 ```bash
 # Render a single file
-systems-engineering function functional_decomposition/example.yaml -o output/
+systems-engineering function example/functional_decomposition.yaml -o output/
 
 # Render all files in a directory
-systems-engineering function functional_decomposition/ -o output/
+systems-engineering function example/ -o output/
 
 # Render a subtree rooted at a specific function
-systems-engineering function functional_decomposition/example.yaml -o output/ --root "Function A"
+systems-engineering function example/functional_decomposition.yaml -o output/ --root "Function A"
 
 # Filter to functions matching a regex (case-insensitive, repeatable)
-systems-engineering function functional_decomposition/example.yaml -o output/ --filter "function"
+systems-engineering function example/functional_decomposition.yaml -o output/ --filter "function"
 
 # Include all descendants of matched functions
-systems-engineering function functional_decomposition/example.yaml -o output/ --filter "function" --include-descendants
+systems-engineering function example/functional_decomposition.yaml -o output/ --filter "function" --include-descendants
 ```
 
 This produces `.d2`, `.svg`, `.png`, `.md`, and `.csv` files in the output directory.
 
 ### Product Breakdown
 
-1. Create a product breakdown YAML file in `product_breakdown/`:
+1. Create a product breakdown YAML file (see `example/` for reference):
 
 ```yaml
 name: System Name
@@ -111,8 +111,8 @@ components:
 
 ```bash
 systems-engineering product verify \
-    -p product_breakdown/example.yaml \
-    -f functional_decomposition/example.yaml
+    -p example/product_breakdown.yaml \
+    -f example/functional_decomposition.yaml
 ```
 
 This checks that every leaf function has a corresponding allocation in the product breakdown and warns about any allocations that don't match a known function.

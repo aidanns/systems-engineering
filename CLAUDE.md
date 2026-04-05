@@ -8,15 +8,14 @@ CLI tools for generating systems engineering diagrams from YAML definitions, ren
 
 - `src/systems_engineering/cli.py` — Main CLI entry point. Reads YAML, outputs `.d2` definitions, renders to SVG/PNG via d2.
 - `pyproject.toml` — Python package configuration. Defines the `systems-engineering` console entry point.
-- `functional_decomposition/` — YAML files defining functional decomposition hierarchies.
-- `product_breakdown/` — YAML files defining product breakdown hierarchies with CI-to-function allocations.
+- `example/` — Example YAML files (functional decomposition and product breakdown).
 - `output/` — Generated `.d2`, `.svg`, `.png`, `.md`, and `.csv` files (gitignored).
 - `scripts/build.sh` — Creates virtualenv and installs the package in editable mode.
 - `scripts/test.sh` — Validates YAML files, output file generation, and runs pytest semantic checks.
 - `tests/test_cli.py` — Pytest suite with structural and golden file tests for all output types.
 - `tests/golden/` — Golden files for expected output. Used for exact-match comparison in tests.
 - `scripts/regenerate_golden.sh` — Regenerates golden files in `tests/golden/` from current CLI output.
-- `scripts/generate.sh` — Generates all diagrams from `functional_decomposition/` to `output/`.
+- `scripts/generate.sh` — Generates all diagrams from `example/` to `output/`.
 - `scripts/release.sh` — Creates a release: auto-determines version bump, runs tests, commits, tags, and pushes.
 - `design/` — CLI's own functional decomposition (dogfooding). Contains `functions.yaml` source and generated artefacts (SVG, CSV, etc.) checked into the repo. Keep updated per Conventions.
 
@@ -67,12 +66,18 @@ scripts/generate.sh
 scripts/generate.sh /path/to/output
 
 # Generate diagrams from a single file (direct)
-.venv/bin/systems-engineering function functional_decomposition/example.yaml -o output/
+.venv/bin/systems-engineering function example/functional_decomposition.yaml -o output/
+
+# Generate diagrams from all files in a directory
+.venv/bin/systems-engineering function example/ -o output/
 
 # Verify all leaf functions are allocated to configuration items
 .venv/bin/systems-engineering product verify \
-    -p product_breakdown/example.yaml \
-    -f functional_decomposition/example.yaml
+    -p example/product_breakdown.yaml \
+    -f example/functional_decomposition.yaml
+
+# Verify using directory mode (finds matching files automatically)
+.venv/bin/systems-engineering product verify -p example/ -f example/
 ```
 
 ## Dependencies
