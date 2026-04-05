@@ -20,6 +20,7 @@ from systems_engineering.cli import (
     filter_tree,
     find_subtree,
     load_yaml,
+    product_yaml_to_d2,
     run_function_command,
     run_product_verify_command,
     yaml_to_csv,
@@ -624,3 +625,106 @@ class TestDirectoryDefaults:
         run_product_verify_command(args)
         captured = capsys.readouterr()
         assert "\u2705 All functions allocated." in captured.out
+
+
+# --- Product D2 output tests ---
+
+
+class TestProductD2Output:
+    @pytest.fixture(autouse=True)
+    def setup(self):
+        self.data = load_yaml(PRODUCT_EXAMPLE_YAML)
+        self.d2 = product_yaml_to_d2(self.data)
+        self.lines = self.d2.splitlines()
+
+    def test_config_block_present(self):
+        assert "layout-engine: elk" in self.d2
+        assert "theme-id: 300" in self.d2
+
+    def test_direction_down(self):
+        assert "direction: down" in self.d2
+
+    def test_root_node(self):
+        assert "root: Example System" in self.d2
+        assert "root.width: 250" in self.d2
+
+    def test_all_component_names_present(self):
+        for name in ["Power Subsystem", "Thermal Subsystem", "Data Subsystem"]:
+            assert any(name in line for line in self.lines), (
+                f"Component '{name}' not found in d2 output"
+            )
+
+    def test_component_arrows_from_root(self):
+        assert "root -> p0" in self.d2
+
+    def test_all_ci_names_present(self):
+        ci_names = [
+            "Solar Panel Assembly", "Battery Pack", "Power Distribution Unit",
+            "Temperature Sensor Array", "Cooling System",
+            "Data Acquisition Module", "Processing Unit", "Storage Module",
+        ]
+        for name in ci_names:
+            assert any(name in line for line in self.lines), (
+                f"CI '{name}' not found in d2 output"
+            )
+
+    def test_ci_nodes_have_circle_shape(self):
+        # Every CI node should have shape: circle
+        circle_lines = [l for l in self.lines if "shape: circle" in l]
+        assert len(circle_lines) == 8  # 8 CIs
+
+    def test_ci_container_grid_config(self):
+        in_container = False
+        for line in self.lines:
+            if '_container: ""' in line:
+                in_container = True
+                container_lines = []
+            elif in_container:
+                container_lines.append(line.strip())
+                if line.strip() == "}":
+                    in_container = False
+                    assert "grid-columns: 1" in container_lines
+                    assert "grid-gap: 5" in container_lines
+                    assert "stroke-width: 0" in container_lines
+                    assert "fill: transparent" in container_lines
+
+    def test_node_count(self):
+        # 3 components + 8 CIs = 11 nodes with p prefix
+        node_defs = re.findall(r"^[ ]*p(\d+): .+", self.d2, re.MULTILINE)
+        assert len(node_defs) == 11
+
+    def test_all_nodes_have_width(self):
+        width_lines = re.findall(r"p\d+\.width: 250", self.d2)
+        assert len(width_lines) == 11
+
+    def test_nested_components_support(self):
+        """Components with nested sub-components should recurse correctly."""
+        nested_data = {
+            "name": "Nested System",
+            "components": [{
+                "name": "Outer",
+                "components": [{
+                    "name": "Inner",
+                    "configuration_items": [{
+                        "name": "Leaf CI",
+                        "functions": ["Some Function"],
+                    }],
+                }],
+            }],
+        }
+        d2 = product_yaml_to_d2(nested_data)
+        assert "Outer" in d2
+        assert "Inner" in d2
+        assert "Leaf CI" in d2
+
+    def test_no_function_names_in_output(self):
+        """Function names allocated to CIs should NOT appear in the d2 output."""
+        function_names = [
+            "Generate Power", "Store Power", "Distribute Power",
+            "Detect Temperature", "Cool Components",
+            "Collect Data", "Transform Data", "Store Data",
+        ]
+        for name in function_names:
+            assert not any(name in line for line in self.lines), (
+                f"Function name '{name}' should not appear in product d2 output"
+            )

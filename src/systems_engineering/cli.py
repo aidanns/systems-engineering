@@ -160,6 +160,80 @@ def yaml_to_d2(data: dict) -> str:
     return "\n".join(lines)
 
 
+def emit_ci_node(lines: list[str], node_id: str, ci: dict, indent: str = ""):
+    """Emit d2 lines for a single configuration item node (circle shape)."""
+    lines.append(f"{indent}{node_id}: {ci['name']}")
+    lines.append(f"{indent}{node_id}.width: 250")
+    lines.append(f"{indent}{node_id}.shape: circle")
+
+
+def emit_ci_container(lines: list[str], parent_id: str, cis: list[dict], counter: list[int]):
+    """Emit a grid container holding CI children, connected to the parent node."""
+    container_id = f"{parent_id}_container"
+    lines.append(f"{container_id}: \"\" {{")
+    lines.append(f"  grid-columns: 1")
+    lines.append(f"  grid-gap: 5")
+    lines.append(f"  style: {{")
+    lines.append(f"    stroke-width: 0")
+    lines.append(f"    fill: transparent")
+    lines.append(f"  }}")
+    for ci in cis:
+        ci_id = f"p{counter[0]}"
+        counter[0] += 1
+        emit_ci_node(lines, ci_id, ci, indent="  ")
+    lines.append(f"}}")
+    lines.append(f"{parent_id} -> {container_id}")
+
+
+def component_to_d2(component: dict, parent_id: str, lines: list[str], counter: list[int]):
+    """Recursively convert a component node and its children to d2 lines."""
+    node_id = f"p{counter[0]}"
+    counter[0] += 1
+
+    emit_node(lines, node_id, component)
+    lines.append(f"{parent_id} -> {node_id}")
+
+    sub_components = component.get("components", [])
+    cis = component.get("configuration_items", [])
+
+    if sub_components:
+        for child in sub_components:
+            component_to_d2(child, node_id, lines, counter)
+    if cis:
+        emit_ci_container(lines, node_id, cis, counter)
+
+
+def product_yaml_to_d2(data: dict) -> str:
+    """Convert a product breakdown YAML structure to a d2 definition."""
+    lines = []
+
+    # d2 configuration
+    lines.append("vars: {")
+    lines.append("  d2-config: {")
+    lines.append("    layout-engine: elk")
+    lines.append("    # Terminal theme code")
+    lines.append("    theme-id: 300")
+    lines.append("  }")
+    lines.append("}")
+    lines.append("")
+
+    # Style: top-down layout for hierarchy
+    lines.append("direction: down")
+    lines.append("")
+
+    # Root node
+    root_id = "root"
+    emit_node(lines, root_id, data)
+    lines.append("")
+
+    counter = [0]
+    for component in data.get("components", []):
+        component_to_d2(component, root_id, lines, counter)
+        lines.append("")
+
+    return "\n".join(lines)
+
+
 def collect_functions(function: dict, parent_name: str, rows: list[tuple[str, str, str]]):
     """Recursively collect function rows as (parent, name, description) tuples."""
     name = function["name"]
