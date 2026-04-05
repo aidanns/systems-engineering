@@ -762,7 +762,7 @@ class TestProductD2Output:
                 if line.strip() == "}":
                     in_container = False
                     container_count += 1
-                    assert "grid-columns: 1" in container_lines
+                    assert "grid-columns: 3" in container_lines
                     assert "grid-gap: 5" in container_lines
                     assert "stroke-width: 0" in container_lines
                     assert "fill: transparent" in container_lines

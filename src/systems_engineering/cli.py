@@ -95,11 +95,12 @@ def emit_node(lines: list[str], node_id: str, node: dict, indent: str = "",
 
 
 def emit_container(lines: list[str], parent_id: str, children: list[dict],
-                   counter: list[int], prefix: str = "f", shape: str | None = None):
+                   counter: list[int], prefix: str = "f", shape: str | None = None,
+                   grid_columns: int = 1):
     """Emit a grid container holding child nodes, connected to the parent node."""
     container_id = f"{parent_id}_container"
     lines.append(f"{container_id}: \"\" {{")
-    lines.append(f"  grid-columns: 1")
+    lines.append(f"  grid-columns: {grid_columns}")
     lines.append(f"  grid-gap: 5")
     lines.append(f"  style: {{")
     lines.append(f"    stroke-width: 0")
@@ -180,7 +181,8 @@ def component_to_d2(component: dict, parent_id: str, lines: list[str], counter: 
         for child in sub_components:
             component_to_d2(child, node_id, lines, counter)
     if cis:
-        emit_container(lines, node_id, cis, counter, prefix="p", shape="circle")
+        emit_container(lines, node_id, cis, counter, prefix="p", shape="circle",
+                       grid_columns=3)
 
 
 def product_yaml_to_d2(data: dict) -> str:
