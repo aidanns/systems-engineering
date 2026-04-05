@@ -2,12 +2,14 @@
 set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
-PYTHON="$REPO_ROOT/.venv/bin/python"
+SYSTEMS_ENGINEERING="$REPO_ROOT/.venv/bin/systems-engineering"
 
-if [ ! -f "$PYTHON" ]; then
-    echo "Error: Virtual environment not found. Run scripts/build.sh first." >&2
+if [ ! -f "$SYSTEMS_ENGINEERING" ]; then
+    echo "Error: systems-engineering CLI not found in virtualenv. Run scripts/build.sh first." >&2
     exit 1
 fi
+
+PYTHON="$REPO_ROOT/.venv/bin/python"
 
 echo "Checking YAML files parse correctly..."
 for f in "$REPO_ROOT"/functional_decomposition/*.yaml "$REPO_ROOT"/functional_decomposition/*.yml; do
@@ -20,9 +22,7 @@ TMPDIR="$(mktemp -d)"
 trap 'rm -rf "$TMPDIR"' EXIT
 for f in "$REPO_ROOT"/functional_decomposition/*.yaml "$REPO_ROOT"/functional_decomposition/*.yml; do
     [ -f "$f" ] || continue
-    # Run generate.py — rendering may fail if d2 is not installed, but we still
-    # check whichever output files were created.
-    "$PYTHON" "$REPO_ROOT/generate.py" function "$f" -o "$TMPDIR" 2>/dev/null || true
+    "$SYSTEMS_ENGINEERING" function "$f" -o "$TMPDIR" 2>/dev/null || true
     stem="$(basename "${f%.*}")"
     for ext in d2 svg png md csv; do
         output_file="${stem}_functions.$ext"

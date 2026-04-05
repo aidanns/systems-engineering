@@ -14,15 +14,26 @@ This project provides CLI tools to generate systems engineering diagrams from YA
 
 - **Functional Decomposition** — Define functional hierarchies in YAML and render them as SVG diagrams.
 
-## Prerequisites
+## Installation
+
+### Via Homebrew (recommended)
+
+```bash
+brew tap aidanns/tools
+brew install systems-engineering
+```
+
+Requires a `HOMEBREW_GITHUB_API_TOKEN` environment variable with a GitHub personal access token (repo scope) since this is a private repository.
+
+### From source
 
 - Python 3.10+
 - [d2](https://d2lang.com/) installed and available on PATH
-- Python dependencies:
-  ```bash
-  python3 -m venv .venv
-  .venv/bin/pip install -r requirements.txt
-  ```
+- [yq](https://github.com/mikefarah/yq) installed and available on PATH (required for tests)
+
+```bash
+scripts/build.sh
+```
 
 ## Usage
 
@@ -52,10 +63,10 @@ functions:
 
 ```bash
 # Render a single file
-.venv/bin/python generate.py function functional_decomposition/example.yaml -o output/
+systems-engineering function functional_decomposition/example.yaml -o output/
 
 # Render all files in a directory
-.venv/bin/python generate.py function functional_decomposition/ -o output/
+systems-engineering function functional_decomposition/ -o output/
 ```
 
-This produces `.d2` and `.svg` files in the output directory.
+This produces `.d2`, `.svg`, `.png`, `.md`, and `.csv` files in the output directory.

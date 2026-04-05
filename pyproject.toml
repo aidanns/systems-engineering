@@ -1,0 +1,22 @@
+[build-system]
+requires = ["setuptools>=68.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "systems-engineering-diagrams"
+version = "0.1.0"
+description = "Generate systems engineering artefacts such as diagrams and tables from YAML definitions."
+readme = "README.md"
+requires-python = ">=3.10"
+authors = [
+    {name = "Aidan Nagorcka-Smith", email = "aidanns@gmail.com"},
+]
+dependencies = [
+    "pyyaml>=6.0",
+]
+
+[project.scripts]
+systems-engineering = "systems_engineering.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
