@@ -12,6 +12,7 @@ import io
 import re
 import subprocess
 import sys
+from collections.abc import Callable
 from pathlib import Path
 
 import yaml
@@ -95,7 +96,7 @@ def emit_node(lines: list[str], node_id: str, node: dict, indent: str = "",
 
 def emit_container(lines: list[str], parent_id: str, children: list[dict],
                    counter: list[int], prefix: str = "f", shape: str | None = None):
-    """Emit a grid container holding leaf children, connected to the parent node."""
+    """Emit a grid container holding child nodes, connected to the parent node."""
     container_id = f"{parent_id}_container"
     lines.append(f"{container_id}: \"\" {{")
     lines.append(f"  grid-columns: 1")
@@ -311,7 +312,8 @@ def render_d2(d2_path: Path, output_path: Path):
 
 
 def _write_outputs(data: dict, yaml_path: Path, output_dir: Path, suffix: str,
-                   to_d2, to_md, to_csv):
+                   to_d2: Callable[[dict], str], to_md: Callable[[dict], str],
+                   to_csv: Callable[[dict], str]):
     """Generate .d2, .svg, .png, .md, and .csv output files."""
     stem = yaml_path.stem
     d2_path = output_dir / f"{stem}_{suffix}.d2"

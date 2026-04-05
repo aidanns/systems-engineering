@@ -1,0 +1,75 @@
+vars: {
+  d2-config: {
+    layout-engine: elk
+    # Terminal theme code
+    theme-id: 300
+  }
+}
+
+direction: down
+
+root: Example System
+root.width: 250
+
+p0: Power Subsystem
+p0.width: 250
+root -> p0
+p0_container: "" {
+  grid-columns: 1
+  grid-gap: 5
+  style: {
+    stroke-width: 0
+    fill: transparent
+  }
+  p1: Solar Panel Assembly
+  p1.width: 250
+  p1.shape: circle
+  p2: Battery Pack
+  p2.width: 250
+  p2.shape: circle
+  p3: Power Distribution Unit
+  p3.width: 250
+  p3.shape: circle
+}
+p0 -> p0_container
+
+p4: Thermal Subsystem
+p4.width: 250
+root -> p4
+p4_container: "" {
+  grid-columns: 1
+  grid-gap: 5
+  style: {
+    stroke-width: 0
+    fill: transparent
+  }
+  p5: Temperature Sensor Array
+  p5.width: 250
+  p5.shape: circle
+  p6: Cooling System
+  p6.width: 250
+  p6.shape: circle
+}
+p4 -> p4_container
+
+p7: Data Subsystem
+p7.width: 250
+root -> p7
+p7_container: "" {
+  grid-columns: 1
+  grid-gap: 5
+  style: {
+    stroke-width: 0
+    fill: transparent
+  }
+  p8: Data Acquisition Module
+  p8.width: 250
+  p8.shape: circle
+  p9: Processing Unit
+  p9.width: 250
+  p9.shape: circle
+  p10: Storage Module
+  p10.width: 250
+  p10.shape: circle
+}
+p7 -> p7_container
