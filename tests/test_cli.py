@@ -81,15 +81,6 @@ class TestD2Output:
             )
 
     def test_node_count(self, all_functions):
-        # Count lines that define nodes (pattern: "fN: Name")
-        node_lines = [
-            line.strip()
-            for line in self.lines
-            if line.strip().startswith("f") and ": " in line.strip()
-            and not line.strip().startswith("f") and "." in line.strip().split(":")[0]
-            is None  # exclude property lines like f0.width
-        ]
-        # Simpler: count unique fN identifiers used as node definitions
         import re
         node_defs = re.findall(r"^[ ]*f(\d+): .+", self.d2, re.MULTILINE)
         assert len(node_defs) == len(all_functions)
@@ -131,6 +122,23 @@ class TestD2Output:
         import re
         width_lines = re.findall(r"f\d+\.width: 250", self.d2)
         assert len(width_lines) == len(all_functions)
+
+    def test_root_with_all_leaf_children_uses_container(self, example_data):
+        """When --root selects a node whose children are all leaves, they should
+        render in a grid container — not as individual nodes with separate arrows.
+        Previously, yaml_to_d2 iterated root's children individually through
+        function_to_d2, which only checks the current node's children for the
+        leaf container pattern. Since the leaves have no children, the container
+        was never created.
+        """
+        subtree = find_subtree(example_data, "Power Management")
+        d2 = yaml_to_d2(subtree)
+        assert "root_container" in d2
+        assert "grid-columns: 1" in d2
+        assert "grid-gap: 5" in d2
+        assert "Generate Power" in d2
+        assert "Store Power" in d2
+        assert "Distribute Power" in d2
 
 
 # --- Markdown structural tests ---
@@ -216,15 +224,19 @@ class TestSvgOutput:
         root = tree.getroot()
         assert "svg" in root.tag
 
-    def test_d2_source_contains_function_names(self, all_functions, generated_output):
-        """Verify the d2 source used to render the SVG contains all function names.
+    def test_svg_contains_function_names(self, all_functions):
+        """Verify function names appear as text elements in the SVG.
 
-        d2 embeds text as base64 font glyphs in SVG, so we check the d2 source instead.
+        d2 renders node labels as uppercase <text> elements using an embedded font.
         """
-        d2_text = (generated_output / "example_functions.d2").read_text()
+        tree = ET.parse(self.svg_path)
+        ns = {"svg": "http://www.w3.org/2000/svg"}
+        svg_texts = {elem.text.strip() for elem in tree.iter("{http://www.w3.org/2000/svg}text")
+                     if elem.text and elem.text.strip()}
         for _, func in all_functions:
-            assert func["name"] in d2_text, (
-                f"Function '{func['name']}' not found in d2 source"
+            expected = func["name"].upper()
+            assert expected in svg_texts, (
+                f"Function '{func['name']}' (as '{expected}') not found in SVG text elements"
             )
 
 
@@ -310,6 +322,10 @@ class TestFindSubtree:
         result = find_subtree(self.data, "Nonexistent")
         assert result is None
 
+    def test_process_file_nonexistent_root_exits(self, tmp_path):
+        with pytest.raises(SystemExit):
+            process_file(EXAMPLE_YAML, tmp_path, root="Nonexistent")
+
 
 # --- filter_tree tests ---
 
@@ -390,18 +406,3 @@ class TestFilterTree:
         assert "Generate Power" in names
         assert "Store Power" in names
         assert "Distribute Power" in names
-
-
-# --- D2 leaf container tests ---
-
-
-class TestD2LeafContainer:
-    def test_root_children_all_leaves_use_container(self, example_data):
-        subtree = find_subtree(example_data, "Power Management")
-        d2 = yaml_to_d2(subtree)
-        assert "root_container" in d2
-        assert "grid-columns: 1" in d2
-        assert "grid-gap: 5" in d2
-        assert "Generate Power" in d2
-        assert "Store Power" in d2
-        assert "Distribute Power" in d2
