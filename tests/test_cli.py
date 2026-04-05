@@ -859,6 +859,16 @@ class TestProductSvgOutput:
     def test_svg_root_element(self):
         assert "svg" in self.tree.getroot().tag
 
+    def test_svg_contains_component_and_ci_names(self):
+        """Verify component and CI names appear as text elements in the SVG."""
+        svg_texts = {elem.text.strip() for elem in self.tree.iter("{http://www.w3.org/2000/svg}text")
+                     if elem.text and elem.text.strip()}
+        for name in ["POWER SUBSYSTEM", "THERMAL SUBSYSTEM", "DATA SUBSYSTEM",
+                      "SOLAR PANEL ASSEMBLY", "BATTERY PACK"]:
+            assert name in svg_texts, (
+                f"'{name}' not found in SVG text elements"
+            )
+
 
 # --- Product PNG tests (require d2) ---
 
