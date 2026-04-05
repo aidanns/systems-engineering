@@ -85,7 +85,11 @@ echo "Running tests..."
 # Update version in pyproject.toml
 echo ""
 echo "Updating version in pyproject.toml..."
-sed -i '' "s/^version = \".*\"/version = \"${new_version}\"/" "$REPO_ROOT/pyproject.toml"
+if [[ "$OSTYPE" == darwin* ]]; then
+    sed -i '' "s/^version = \".*\"/version = \"${new_version}\"/" "$REPO_ROOT/pyproject.toml"
+else
+    sed -i "s/^version = \".*\"/version = \"${new_version}\"/" "$REPO_ROOT/pyproject.toml"
+fi
 
 # Commit and tag
 git add "$REPO_ROOT/pyproject.toml"

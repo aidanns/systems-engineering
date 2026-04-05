@@ -60,6 +60,7 @@ scripts/generate.sh /path/to/output
 ## Conventions
 
 - Use [conventional commits](https://www.conventionalcommits.org/) for all git commits (e.g. `feat:`, `fix:`, `docs:`, `chore:`).
+- All bash scripts in `scripts/` must be portable across macOS and Linux.
 - Before finishing work, confirm that `scripts/build.sh`, `scripts/test.sh`, and `scripts/generate.sh` all run successfully.
 - When adding new output types or changing output format, regenerate and commit updated golden files in `tests/golden/` so changes are reviewable during PR review.
 
