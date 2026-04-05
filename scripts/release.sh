@@ -3,6 +3,12 @@ set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 
+# Validate arguments
+case "${1:-}" in
+    --yes|"") ;;
+    *) echo "Usage: $0 [--yes]"; exit 1 ;;
+esac
+
 # Guard: must be on main branch
 current_branch=$(git branch --show-current)
 if [ "$current_branch" != "main" ]; then
