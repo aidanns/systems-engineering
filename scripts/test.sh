@@ -51,6 +51,22 @@ else
     exit 1
 fi
 
+echo "Checking product diagram file generation..."
+for f in "$REPO_ROOT"/product_breakdown/*.yaml "$REPO_ROOT"/product_breakdown/*.yml; do
+    [ -f "$f" ] || continue
+    "$SYSTEMS_ENGINEERING" product diagram "$f" -o "$TMPDIR" 2>/dev/null || true
+    stem="$(basename "${f%.*}")"
+    for ext in d2 svg png md csv; do
+        output_file="${stem}_products.$ext"
+        if [ -f "$TMPDIR/$output_file" ]; then
+            echo "  OK: $f -> $output_file"
+        else
+            echo "  FAIL: $f (no $output_file output)" >&2
+            exit 1
+        fi
+    done
+done
+
 echo "Running pytest..."
 "$REPO_ROOT/.venv/bin/pytest" "$REPO_ROOT/tests/" -v
 
