@@ -20,6 +20,8 @@ from systems_engineering.cli import (
     filter_tree,
     find_subtree,
     load_yaml,
+    process_file,
+    process_product_file,
     product_collect_all_rows,
     product_yaml_to_csv,
     product_yaml_to_d2,
@@ -29,7 +31,6 @@ from systems_engineering.cli import (
     yaml_to_csv,
     yaml_to_d2,
     yaml_to_markdown,
-    process_file,
 )
 
 REPO_ROOT = Path(__file__).parent.parent
@@ -810,3 +811,68 @@ class TestProductCsvOutput:
     def test_row_count(self):
         data_rows = self.rows[1:]
         assert len(data_rows) == 12  # 1 root + 3 components + 8 CIs
+
+
+# --- process_product_file tests ---
+
+
+@pytest.fixture(scope="module")
+def generated_product_output(tmp_path_factory):
+    """Generate all product output files once and share across tests."""
+    tmp_path = tmp_path_factory.mktemp("product_output")
+    process_product_file(PRODUCT_EXAMPLE_YAML, tmp_path)
+    return tmp_path
+
+
+class TestProcessProductFile:
+    def test_d2_file_exists(self, generated_product_output):
+        assert (generated_product_output / "example_products.d2").exists()
+
+    def test_md_file_exists(self, generated_product_output):
+        assert (generated_product_output / "example_products.md").exists()
+
+    def test_csv_file_exists(self, generated_product_output):
+        assert (generated_product_output / "example_products.csv").exists()
+
+    @pytest.mark.skipif(not HAS_D2, reason="d2 not installed")
+    def test_svg_file_exists(self, generated_product_output):
+        assert (generated_product_output / "example_products.svg").exists()
+
+    @pytest.mark.skipif(not HAS_D2, reason="d2 not installed")
+    def test_png_file_exists(self, generated_product_output):
+        assert (generated_product_output / "example_products.png").exists()
+
+
+# --- Product SVG tests (require d2) ---
+
+
+@pytest.mark.skipif(not HAS_D2, reason="d2 not installed")
+class TestProductSvgOutput:
+    @pytest.fixture(autouse=True)
+    def setup(self, generated_product_output):
+        self.svg_path = generated_product_output / "example_products.svg"
+        self.tree = ET.parse(self.svg_path)
+
+    def test_valid_xml(self):
+        assert self.tree is not None
+
+    def test_svg_root_element(self):
+        assert "svg" in self.tree.getroot().tag
+
+
+# --- Product PNG tests (require d2) ---
+
+
+@pytest.mark.skipif(not HAS_D2, reason="d2 not installed")
+class TestProductPngOutput:
+    @pytest.fixture(autouse=True)
+    def setup(self, generated_product_output):
+        self.png_path = generated_product_output / "example_products.png"
+
+    def test_png_magic_bytes(self):
+        with open(self.png_path, "rb") as f:
+            header = f.read(8)
+        assert header[:4] == b"\x89PNG"
+
+    def test_file_size_nontrivial(self):
+        assert self.png_path.stat().st_size > 1024

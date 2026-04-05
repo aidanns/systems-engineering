@@ -389,6 +389,36 @@ def process_file(yaml_path: Path, output_dir: Path, root: str | None = None,
     print(f"Written: {csv_path}")
 
 
+def process_product_file(yaml_path: Path, output_dir: Path):
+    """Process a single product breakdown YAML file: generate .d2, .svg, .png, .md, and .csv."""
+    data = load_yaml(yaml_path)
+
+    stem = yaml_path.stem
+    d2_path = output_dir / f"{stem}_products.d2"
+    svg_path = output_dir / f"{stem}_products.svg"
+    png_path = output_dir / f"{stem}_products.png"
+    md_path = output_dir / f"{stem}_products.md"
+    csv_path = output_dir / f"{stem}_products.csv"
+
+    d2_content = product_yaml_to_d2(data)
+    d2_path.write_text(d2_content)
+    print(f"Written: {d2_path}")
+
+    render_d2(d2_path, svg_path)
+    print(f"Written: {svg_path}")
+
+    render_d2(d2_path, png_path)
+    print(f"Written: {png_path}")
+
+    md_content = product_yaml_to_markdown(data)
+    md_path.write_text(md_content)
+    print(f"Written: {md_path}")
+
+    csv_content = product_yaml_to_csv(data)
+    csv_path.write_text(csv_content)
+    print(f"Written: {csv_path}")
+
+
 def collect_leaf_function_names(data: dict) -> set[str]:
     """Collect names of all leaf functions (excluding root) from a functional decomposition tree."""
     names: set[str] = set()
