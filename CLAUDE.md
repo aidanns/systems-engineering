@@ -61,3 +61,10 @@ scripts/generate.sh /path/to/output
 - Use [conventional commits](https://www.conventionalcommits.org/) for all git commits (e.g. `feat:`, `fix:`, `docs:`, `chore:`).
 - Before finishing work, confirm that `scripts/build.sh`, `scripts/test.sh`, and `scripts/generate.sh` all run successfully.
 - When adding new output types or changing output format, regenerate and commit updated golden files in `tests/golden/` so changes are reviewable during PR review.
+
+## Releasing
+
+- Version is defined in `pyproject.toml`. Tags follow `vX.Y.Z` format.
+- The Homebrew formula is at `~/Projects/homebrew-tools/Formula/systems-engineering.rb` and must be updated with the new tag after each release.
+- If Python dependencies change, the formula's `resource` blocks (URLs and SHA256 hashes) must also be updated.
+- See README.md for the full step-by-step release process.

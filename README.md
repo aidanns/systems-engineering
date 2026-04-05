@@ -70,3 +70,39 @@ systems-engineering function functional_decomposition/ -o output/
 ```
 
 This produces `.d2`, `.svg`, `.png`, `.md`, and `.csv` files in the output directory.
+
+## Releasing
+
+Releases are distributed via a private Homebrew tap (`aidanns/tools`).
+
+### Steps
+
+1. **Update the version** in `pyproject.toml`.
+
+2. **Commit the version bump**:
+   ```bash
+   git commit -am "chore: bump version to X.Y.Z"
+   ```
+
+3. **Create and push a git tag**:
+   ```bash
+   git tag vX.Y.Z
+   git push origin main --tags
+   ```
+
+4. **Update the Homebrew formula** in `~/Projects/homebrew-tools/Formula/systems-engineering.rb`:
+   - Change the `tag:` value to the new tag (e.g. `tag: "vX.Y.Z"`)
+   - If Python dependencies changed, update the `resource` blocks (URLs and SHA256 hashes)
+
+5. **Commit and push the formula update**:
+   ```bash
+   cd ~/Projects/homebrew-tools
+   git commit -am "systems-engineering: update to vX.Y.Z"
+   git push
+   ```
+
+6. **Test the update**:
+   ```bash
+   brew upgrade systems-engineering
+   systems-engineering --help
+   ```
