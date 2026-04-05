@@ -279,6 +279,57 @@ def yaml_to_csv(data: dict) -> str:
     return output.getvalue()
 
 
+def _collect_product_rows(component: dict, parent_name: str,
+                          rows: list[tuple[str, str, str, str, str]]):
+    """Recursively collect product breakdown rows as (parent, name, type, description, functions) tuples."""
+    name = component["name"]
+    description = component.get("description", "")
+    rows.append((parent_name, name, "Component", description, ""))
+    for child in component.get("components", []):
+        _collect_product_rows(child, name, rows)
+    for ci in component.get("configuration_items", []):
+        ci_name = ci["name"]
+        ci_desc = ci.get("description", "")
+        functions_str = ", ".join(ci.get("functions", []))
+        rows.append((name, ci_name, "Configuration Item", ci_desc, functions_str))
+
+
+def product_collect_all_rows(data: dict) -> list[tuple[str, str, str, str, str]]:
+    """Collect all rows for product breakdown tabular output, including the root node."""
+    rows: list[tuple[str, str, str, str, str]] = []
+    root_name = data["name"]
+    rows.append(("", root_name, "System", data.get("description", ""), ""))
+    for component in data.get("components", []):
+        _collect_product_rows(component, root_name, rows)
+    return rows
+
+
+def product_yaml_to_markdown(data: dict) -> str:
+    """Convert a product breakdown YAML structure to a markdown table."""
+    rows = product_collect_all_rows(data)
+
+    lines = [
+        f"# {data['name']}",
+        "",
+        "| Parent | Name | Type | Description | Functions |",
+        "|--------|------|------|-------------|-----------|",
+    ]
+    for parent, name, type_, description, functions in rows:
+        lines.append(f"| {parent} | {name} | {type_} | {description} | {functions} |")
+
+    return "\n".join(lines) + "\n"
+
+
+def product_yaml_to_csv(data: dict) -> str:
+    """Convert a product breakdown YAML structure to a CSV table."""
+    rows = product_collect_all_rows(data)
+    output = io.StringIO()
+    writer = csv.writer(output)
+    writer.writerow(["Parent", "Name", "Type", "Description", "Functions"])
+    writer.writerows(rows)
+    return output.getvalue()
+
+
 def render_d2(d2_path: Path, output_path: Path):
     """Run d2 to render a .d2 file to the given output format (determined by extension)."""
     try:

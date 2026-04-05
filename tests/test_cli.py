@@ -20,7 +20,10 @@ from systems_engineering.cli import (
     filter_tree,
     find_subtree,
     load_yaml,
+    product_collect_all_rows,
+    product_yaml_to_csv,
     product_yaml_to_d2,
+    product_yaml_to_markdown,
     run_function_command,
     run_product_verify_command,
     yaml_to_csv,
@@ -731,3 +734,79 @@ class TestProductD2Output:
             assert not any(name in line for line in self.lines), (
                 f"Function name '{name}' should not appear in product d2 output"
             )
+
+
+# --- Product Markdown structural tests ---
+
+
+class TestProductMarkdownOutput:
+    @pytest.fixture(autouse=True)
+    def setup(self):
+        self.data = load_yaml(PRODUCT_EXAMPLE_YAML)
+        self.md = product_yaml_to_markdown(self.data)
+        self.lines = self.md.splitlines()
+
+    def test_header(self):
+        assert self.lines[0] == "# Example System"
+
+    def test_table_columns(self):
+        assert "| Parent | Name | Type | Description | Functions |" in self.md
+
+    def test_root_row_present(self):
+        assert "|  | Example System | System |" in self.md
+
+    def test_component_rows_have_type(self):
+        assert "| Example System | Power Subsystem | Component |" in self.md
+        assert "| Example System | Thermal Subsystem | Component |" in self.md
+        assert "| Example System | Data Subsystem | Component |" in self.md
+
+    def test_ci_rows_have_type(self):
+        assert "| Power Subsystem | Solar Panel Assembly | Configuration Item |" in self.md
+        assert "| Thermal Subsystem | Temperature Sensor Array | Configuration Item |" in self.md
+
+    def test_ci_rows_include_functions(self):
+        assert "Generate Power" in self.md
+        assert "Store Power" in self.md
+
+    def test_row_count(self):
+        # Data rows = total lines - header (1) - blank line (1) - column header (1) - separator (1)
+        data_rows = [l for l in self.lines if l.startswith("| ") and "---" not in l and "Parent" not in l]
+        assert len(data_rows) == 12  # 1 root + 3 components + 8 CIs
+
+
+# --- Product CSV structural tests ---
+
+
+class TestProductCsvOutput:
+    @pytest.fixture(autouse=True)
+    def setup(self):
+        self.data = load_yaml(PRODUCT_EXAMPLE_YAML)
+        self.csv_str = product_yaml_to_csv(self.data)
+        reader = csv.reader(io.StringIO(self.csv_str))
+        self.rows = list(reader)
+
+    def test_header(self):
+        assert self.rows[0] == ["Parent", "Name", "Type", "Description", "Functions"]
+
+    def test_root_row_present(self):
+        assert self.rows[1][0] == ""
+        assert self.rows[1][1] == "Example System"
+        assert self.rows[1][2] == "System"
+
+    def test_component_rows_have_type(self):
+        component_rows = [r for r in self.rows[1:] if r[2] == "Component"]
+        names = {r[1] for r in component_rows}
+        assert names == {"Power Subsystem", "Thermal Subsystem", "Data Subsystem"}
+
+    def test_ci_rows_have_type(self):
+        ci_rows = [r for r in self.rows[1:] if r[2] == "Configuration Item"]
+        assert len(ci_rows) == 8
+
+    def test_ci_rows_include_functions(self):
+        ci_rows = [r for r in self.rows[1:] if r[2] == "Configuration Item"]
+        solar_row = [r for r in ci_rows if r[1] == "Solar Panel Assembly"][0]
+        assert "Generate Power" in solar_row[4]
+
+    def test_row_count(self):
+        data_rows = self.rows[1:]
+        assert len(data_rows) == 12  # 1 root + 3 components + 8 CIs
