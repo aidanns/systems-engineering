@@ -18,6 +18,6 @@ fi
 OUTPUT_DIR="${1:-$REPO_ROOT/output}"
 
 echo "Generating diagrams to $OUTPUT_DIR..."
-"$SYSTEMS_ENGINEERING" function "$REPO_ROOT/functional_decomposition/" -o "$OUTPUT_DIR"
+"$SYSTEMS_ENGINEERING" function "$REPO_ROOT/example/functional_decomposition.yaml" -o "$OUTPUT_DIR"
 
 echo "Done."

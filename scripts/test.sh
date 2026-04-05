@@ -12,31 +12,31 @@ fi
 PYTHON="$REPO_ROOT/.venv/bin/python"
 
 echo "Checking YAML files parse correctly..."
-for f in "$REPO_ROOT"/functional_decomposition/*.yaml "$REPO_ROOT"/functional_decomposition/*.yml; do
+for f in "$REPO_ROOT"/example/functional_decomposition.yaml; do
     [ -f "$f" ] || continue
     "$PYTHON" -c "import yaml; yaml.safe_load(open('$f'))" && echo "  OK: $f" || { echo "  FAIL: $f"; exit 1; }
 done
 
 echo "Checking product breakdown YAML files parse correctly..."
-for f in "$REPO_ROOT"/product_breakdown/*.yaml "$REPO_ROOT"/product_breakdown/*.yml; do
+for f in "$REPO_ROOT"/example/product_breakdown.yaml; do
     [ -f "$f" ] || continue
     "$PYTHON" -c "import yaml; yaml.safe_load(open('$f'))" && echo "  OK: $f" || { echo "  FAIL: $f"; exit 1; }
 done
 
 echo "Checking product verify..."
 "$SYSTEMS_ENGINEERING" product verify \
-    -p "$REPO_ROOT/product_breakdown/example.yaml" \
-    -f "$REPO_ROOT/functional_decomposition/example.yaml"
+    -p "$REPO_ROOT/example/product_breakdown.yaml" \
+    -f "$REPO_ROOT/example/functional_decomposition.yaml"
 
 echo "Checking file generation..."
 TMPDIR="$(mktemp -d)"
 trap 'rm -rf "$TMPDIR"' EXIT
-for f in "$REPO_ROOT"/functional_decomposition/*.yaml "$REPO_ROOT"/functional_decomposition/*.yml; do
+for f in "$REPO_ROOT"/example/functional_decomposition.yaml; do
     [ -f "$f" ] || continue
     "$SYSTEMS_ENGINEERING" function "$f" -o "$TMPDIR" 2>/dev/null || true
     stem="$(basename "${f%.*}")"
     for ext in d2 svg png md csv; do
-        output_file="${stem}_functions.$ext"
+        output_file="${stem}.$ext"
         if [ -f "$TMPDIR/$output_file" ]; then
             echo "  OK: $f -> $output_file"
         else
@@ -45,7 +45,7 @@ for f in "$REPO_ROOT"/functional_decomposition/*.yaml "$REPO_ROOT"/functional_de
         fi
     done
     # Check that CSV row count matches the number of functions in the YAML (+1 for root).
-    csv_file="${stem}_functions.csv"
+    csv_file="${stem}.csv"
     csv_rows=$(( $(wc -l < "$TMPDIR/$csv_file") - 1 ))  # subtract header
     yaml_functions=$(yq '[.functions // [] | .. | select(has("name")) | .name] | length' "$f")
     expected_rows=$(( yaml_functions + 1 ))  # +1 for root node row

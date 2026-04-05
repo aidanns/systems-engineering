@@ -239,10 +239,10 @@ def process_file(yaml_path: Path, output_dir: Path, root: str | None = None,
         data = filter_tree(data, filters, include_descendants)
 
     stem = yaml_path.stem
-    d2_path = output_dir / f"{stem}_functions.d2"
-    svg_path = output_dir / f"{stem}_functions.svg"
-    png_path = output_dir / f"{stem}_functions.png"
-    md_path = output_dir / f"{stem}_functions.md"
+    d2_path = output_dir / f"{stem}.d2"
+    svg_path = output_dir / f"{stem}.svg"
+    png_path = output_dir / f"{stem}.png"
+    md_path = output_dir / f"{stem}.md"
 
     d2_content = yaml_to_d2(data)
     d2_path.write_text(d2_content)
@@ -258,7 +258,7 @@ def process_file(yaml_path: Path, output_dir: Path, root: str | None = None,
     md_path.write_text(md_content)
     print(f"Written: {md_path}")
 
-    csv_path = output_dir / f"{stem}_functions.csv"
+    csv_path = output_dir / f"{stem}.csv"
     csv_content = yaml_to_csv(data)
     csv_path.write_text(csv_content)
     print(f"Written: {csv_path}")

@@ -27,8 +27,8 @@ from systems_engineering.cli import (
 )
 
 REPO_ROOT = Path(__file__).parent.parent
-EXAMPLE_YAML = REPO_ROOT / "functional_decomposition" / "example.yaml"
-PRODUCT_EXAMPLE_YAML = REPO_ROOT / "product_breakdown" / "example.yaml"
+EXAMPLE_YAML = REPO_ROOT / "example" / "functional_decomposition.yaml"
+PRODUCT_EXAMPLE_YAML = REPO_ROOT / "example" / "product_breakdown.yaml"
 GOLDEN_DIR = REPO_ROOT / "tests" / "golden"
 
 HAS_D2 = shutil.which("d2") is not None
@@ -217,7 +217,7 @@ class TestCsvOutput:
 class TestSvgOutput:
     @pytest.fixture(autouse=True)
     def setup(self, generated_output):
-        self.svg_path = generated_output / "example_functions.svg"
+        self.svg_path = generated_output / "functional_decomposition.svg"
         self.tree = ET.parse(self.svg_path)
 
     def test_valid_xml(self):
@@ -248,7 +248,7 @@ class TestSvgOutput:
 class TestPngOutput:
     @pytest.fixture(autouse=True)
     def setup(self, generated_output):
-        self.png_path = generated_output / "example_functions.png"
+        self.png_path = generated_output / "functional_decomposition.png"
 
     def test_png_magic_bytes(self):
         with open(self.png_path, "rb") as f:
@@ -269,29 +269,29 @@ class TestGoldenFiles:
 
     def test_d2_matches_golden(self):
         generated = yaml_to_d2(self.data)
-        golden = (GOLDEN_DIR / "example_functions.d2").read_text()
+        golden = (GOLDEN_DIR / "functional_decomposition.d2").read_text()
         assert generated == golden, "D2 output does not match golden file"
 
     def test_markdown_matches_golden(self):
         generated = yaml_to_markdown(self.data)
-        golden = (GOLDEN_DIR / "example_functions.md").read_text()
+        golden = (GOLDEN_DIR / "functional_decomposition.md").read_text()
         assert generated == golden, "Markdown output does not match golden file"
 
     def test_csv_matches_golden(self):
         generated = yaml_to_csv(self.data)
-        golden = (GOLDEN_DIR / "example_functions.csv").open(newline="").read()
+        golden = (GOLDEN_DIR / "functional_decomposition.csv").open(newline="").read()
         assert generated == golden, "CSV output does not match golden file"
 
     @pytest.mark.skipif(not HAS_D2, reason="d2 not installed")
     def test_svg_matches_golden(self, generated_output):
-        generated = (generated_output / "example_functions.svg").read_bytes()
-        golden = (GOLDEN_DIR / "example_functions.svg").read_bytes()
+        generated = (generated_output / "functional_decomposition.svg").read_bytes()
+        golden = (GOLDEN_DIR / "functional_decomposition.svg").read_bytes()
         assert generated == golden, "SVG output does not match golden file"
 
     @pytest.mark.skipif(not HAS_D2, reason="d2 not installed")
     def test_png_matches_golden(self, generated_output):
-        generated = (generated_output / "example_functions.png").read_bytes()
-        golden = (GOLDEN_DIR / "example_functions.png").read_bytes()
+        generated = (generated_output / "functional_decomposition.png").read_bytes()
+        golden = (GOLDEN_DIR / "functional_decomposition.png").read_bytes()
         assert generated == golden, "PNG output does not match golden file"
 
 
