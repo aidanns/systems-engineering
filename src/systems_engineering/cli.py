@@ -285,10 +285,28 @@ def collect_allocated_functions(data: dict) -> set[str]:
     return allocated
 
 
+def resolve_directory_to_file(dir_path: Path, default_stem: str) -> Path:
+    """If dir_path is a directory, look for default_stem.yaml (or .yml) inside it.
+
+    Returns the resolved file path (which may not exist if neither extension was found).
+    If dir_path is not a directory, returns it unchanged.
+    """
+    if not dir_path.is_dir():
+        return dir_path
+    candidate = dir_path / f"{default_stem}.yaml"
+    if candidate.exists():
+        return candidate
+    candidate = dir_path / f"{default_stem}.yml"
+    if candidate.exists():
+        return candidate
+    # Return the .yaml path so error messages reference the expected filename
+    return dir_path / f"{default_stem}.yaml"
+
+
 def run_product_verify_command(args):
     """Handle the 'product verify' subcommand."""
-    fd_path: Path = args.functional_decomposition
-    pb_path: Path = args.product_breakdown
+    fd_path: Path = resolve_directory_to_file(args.functional_decomposition, "functional_decomposition")
+    pb_path: Path = resolve_directory_to_file(args.product_breakdown, "product_breakdown")
 
     if not fd_path.exists():
         print(f"Error: {fd_path} does not exist.", file=sys.stderr)
@@ -338,12 +356,11 @@ def run_function_command(args):
     if input_path.is_file():
         process_file(input_path, output_dir, root, filters, include_descendants)
     elif input_path.is_dir():
-        yaml_files = sorted(input_path.glob("*.yaml")) + sorted(input_path.glob("*.yml"))
-        if not yaml_files:
-            print(f"No YAML files found in {input_path}.", file=sys.stderr)
+        default_file = resolve_directory_to_file(input_path, "functional_decomposition")
+        if not default_file.exists():
+            print(f"Error: no functional_decomposition.yaml found in {input_path}.", file=sys.stderr)
             sys.exit(1)
-        for yaml_file in yaml_files:
-            process_file(yaml_file, output_dir, root, filters, include_descendants)
+        process_file(default_file, output_dir, root, filters, include_descendants)
     else:
         print(f"Error: {input_path} is not a file or directory.", file=sys.stderr)
         sys.exit(1)

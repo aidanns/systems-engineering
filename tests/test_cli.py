@@ -1,5 +1,6 @@
 """Semantic tests for the systems-engineering CLI output."""
 
+import argparse
 import csv
 import importlib.metadata
 import io
@@ -19,6 +20,7 @@ from systems_engineering.cli import (
     filter_tree,
     find_subtree,
     load_yaml,
+    run_function_command,
     run_product_verify_command,
     yaml_to_csv,
     yaml_to_d2,
@@ -580,3 +582,45 @@ class TestVersion:
         expected_version = importlib.metadata.version("systems-engineering-diagrams")
         assert result.returncode == 0
         assert expected_version in result.stdout
+
+
+class TestDirectoryDefaults:
+    def test_function_command_directory_without_default_file_exits(self, tmp_path):
+        """When given a directory without functional_decomposition.yaml, should exit with error."""
+        (tmp_path / "empty_dir").mkdir()
+        args = argparse.Namespace(
+            input=tmp_path / "empty_dir",
+            output=tmp_path / "output",
+            root=None,
+            filter=None,
+            include_descendants=False,
+        )
+        with pytest.raises(SystemExit):
+            run_function_command(args)
+
+    def test_function_command_directory_resolves_default_file(self, tmp_path):
+        """When given a directory containing functional_decomposition.yaml, run_function_command processes it."""
+        (tmp_path / "input").mkdir()
+        shutil.copy(EXAMPLE_YAML, tmp_path / "input" / "functional_decomposition.yaml")
+        output_dir = tmp_path / "output"
+        args = argparse.Namespace(
+            input=tmp_path / "input",
+            output=output_dir,
+            root=None,
+            filter=None,
+            include_descendants=False,
+        )
+        run_function_command(args)
+        assert (output_dir / "functional_decomposition.d2").exists()
+
+    def test_product_verify_directory_resolves_default_files(self, tmp_path):
+        """When given directories, product verify should resolve default filenames."""
+        shutil.copy(EXAMPLE_YAML, tmp_path / "functional_decomposition.yaml")
+        shutil.copy(PRODUCT_EXAMPLE_YAML, tmp_path / "product_breakdown.yaml")
+        args = argparse.Namespace(
+            functional_decomposition=tmp_path,
+            product_breakdown=tmp_path,
+        )
+        # Should not raise an error about missing files. The verify result itself
+        # (all allocated vs some unallocated) depends on the example data.
+        run_product_verify_command(args)
