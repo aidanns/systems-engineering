@@ -2,6 +2,7 @@
 
 import csv
 import io
+import re
 import shutil
 import xml.etree.ElementTree as ET
 from pathlib import Path
@@ -45,9 +46,10 @@ def all_functions(example_data):
     return result
 
 
-@pytest.fixture
-def generated_output(example_data, tmp_path):
-    """Generate all output files and return the output directory."""
+@pytest.fixture(scope="module")
+def generated_output(tmp_path_factory):
+    """Generate all output files once and share across tests."""
+    tmp_path = tmp_path_factory.mktemp("output")
     process_file(EXAMPLE_YAML, tmp_path)
     return tmp_path
 
@@ -81,7 +83,6 @@ class TestD2Output:
             )
 
     def test_node_count(self, all_functions):
-        import re
         node_defs = re.findall(r"^[ ]*f(\d+): .+", self.d2, re.MULTILINE)
         assert len(node_defs) == len(all_functions)
 
@@ -119,17 +120,12 @@ class TestD2Output:
                     assert "fill: transparent" in container_lines
 
     def test_all_nodes_have_width(self, all_functions):
-        import re
         width_lines = re.findall(r"f\d+\.width: 250", self.d2)
         assert len(width_lines) == len(all_functions)
 
     def test_root_with_all_leaf_children_uses_container(self, example_data):
         """When --root selects a node whose children are all leaves, they should
         render in a grid container — not as individual nodes with separate arrows.
-        Previously, yaml_to_d2 iterated root's children individually through
-        function_to_d2, which only checks the current node's children for the
-        leaf container pattern. Since the leaves have no children, the container
-        was never created.
         """
         subtree = find_subtree(example_data, "Power Management")
         d2 = yaml_to_d2(subtree)
@@ -215,23 +211,21 @@ class TestSvgOutput:
     @pytest.fixture(autouse=True)
     def setup(self, generated_output):
         self.svg_path = generated_output / "example_functions.svg"
+        self.tree = ET.parse(self.svg_path)
 
     def test_valid_xml(self):
-        ET.parse(self.svg_path)
+        # Parsing already succeeded in setup
+        assert self.tree is not None
 
     def test_svg_root_element(self):
-        tree = ET.parse(self.svg_path)
-        root = tree.getroot()
-        assert "svg" in root.tag
+        assert "svg" in self.tree.getroot().tag
 
     def test_svg_contains_function_names(self, all_functions):
         """Verify function names appear as text elements in the SVG.
 
         d2 renders node labels as uppercase <text> elements using an embedded font.
         """
-        tree = ET.parse(self.svg_path)
-        ns = {"svg": "http://www.w3.org/2000/svg"}
-        svg_texts = {elem.text.strip() for elem in tree.iter("{http://www.w3.org/2000/svg}text")
+        svg_texts = {elem.text.strip() for elem in self.tree.iter("{http://www.w3.org/2000/svg}text")
                      if elem.text and elem.text.strip()}
         for _, func in all_functions:
             expected = func["name"].upper()

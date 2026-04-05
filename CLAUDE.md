@@ -14,6 +14,7 @@ CLI tools for generating systems engineering diagrams from YAML definitions, ren
 - `scripts/test.sh` — Validates YAML files, output file generation, and runs pytest semantic checks.
 - `tests/test_cli.py` — Pytest suite with structural and golden file tests for all output types.
 - `tests/golden/` — Golden files for expected output. Used for exact-match comparison in tests.
+- `scripts/regenerate_golden.sh` — Regenerates golden files in `tests/golden/` from current CLI output.
 - `scripts/generate.sh` — Generates all diagrams from `functional_decomposition/` to `output/`.
 
 ## YAML Schema for Functional Decomposition

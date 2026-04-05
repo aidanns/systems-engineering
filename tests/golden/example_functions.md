@@ -2,7 +2,7 @@
 
 | Parent | Function | Description |
 |--------|----------|-------------|
-|  | Example System |  |
+|  | Example System | An example system demonstrating functional decomposition. |
 | Example System | Power Management | Manage the generation, storage, and distribution of power. |
 | Power Management | Generate Power | Convert energy sources into electrical power. |
 | Power Management | Store Power | Store electrical power for later use. |

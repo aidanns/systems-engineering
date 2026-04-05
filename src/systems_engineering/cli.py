@@ -89,6 +89,24 @@ def emit_node(lines: list[str], node_id: str, function: dict, indent: str = ""):
         lines.append(f"{indent}{node_id}.style.stroke: red")
 
 
+def emit_leaf_container(lines: list[str], parent_id: str, children: list[dict], counter: list[int]):
+    """Emit a grid container holding leaf children, connected to the parent node."""
+    container_id = f"{parent_id}_container"
+    lines.append(f"{container_id}: \"\" {{")
+    lines.append(f"  grid-columns: 1")
+    lines.append(f"  grid-gap: 5")
+    lines.append(f"  style: {{")
+    lines.append(f"    stroke-width: 0")
+    lines.append(f"    fill: transparent")
+    lines.append(f"  }}")
+    for child in children:
+        child_id = f"f{counter[0]}"
+        counter[0] += 1
+        emit_node(lines, child_id, child, indent="  ")
+    lines.append(f"}}")
+    lines.append(f"{parent_id} -> {container_id}")
+
+
 def function_to_d2(function: dict, parent_id: str, lines: list[str], counter: list[int]):
     """Recursively convert a function node and its children to d2 lines."""
     node_id = f"f{counter[0]}"
@@ -99,21 +117,7 @@ def function_to_d2(function: dict, parent_id: str, lines: list[str], counter: li
     lines.append(f"{parent_id} -> {node_id}")
 
     if children and all(is_leaf(c) for c in children):
-        # All children are leaves — render them in a separate grid container.
-        container_id = f"{node_id}_container"
-        lines.append(f"{container_id}: \"\" {{")
-        lines.append(f"  grid-columns: 1")
-        lines.append(f"  grid-gap: 5")
-        lines.append(f"  style: {{")
-        lines.append(f"    stroke-width: 0")
-        lines.append(f"    fill: transparent")
-        lines.append(f"  }}")
-        for child in children:
-            child_id = f"f{counter[0]}"
-            counter[0] += 1
-            emit_node(lines, child_id, child, indent="  ")
-        lines.append(f"}}")
-        lines.append(f"{node_id} -> {container_id}")
+        emit_leaf_container(lines, node_id, children, counter)
     else:
         for child in children:
             function_to_d2(child, node_id, lines, counter)
@@ -145,20 +149,7 @@ def yaml_to_d2(data: dict) -> str:
     children = data.get("functions", [])
     counter = [0]
     if children and all(is_leaf(c) for c in children):
-        container_id = f"{root_id}_container"
-        lines.append(f"{container_id}: \"\" {{")
-        lines.append(f"  grid-columns: 1")
-        lines.append(f"  grid-gap: 5")
-        lines.append(f"  style: {{")
-        lines.append(f"    stroke-width: 0")
-        lines.append(f"    fill: transparent")
-        lines.append(f"  }}")
-        for function in children:
-            child_id = f"f{counter[0]}"
-            counter[0] += 1
-            emit_node(lines, child_id, function, indent="  ")
-        lines.append(f"}}")
-        lines.append(f"{root_id} -> {container_id}")
+        emit_leaf_container(lines, root_id, children, counter)
         lines.append("")
     else:
         for function in children:
@@ -177,16 +168,22 @@ def collect_functions(function: dict, parent_name: str, rows: list[tuple[str, st
         collect_functions(child, name, rows)
 
 
-def yaml_to_markdown(data: dict) -> str:
-    """Convert a functional decomposition YAML structure to a markdown table."""
+def collect_all_rows(data: dict) -> list[tuple[str, str, str]]:
+    """Collect all rows for tabular output, including the root node."""
     rows: list[tuple[str, str, str]] = []
     root_name = data["name"]
     rows.append(("", root_name, data.get("description", "")))
     for function in data.get("functions", []):
         collect_functions(function, root_name, rows)
+    return rows
+
+
+def yaml_to_markdown(data: dict) -> str:
+    """Convert a functional decomposition YAML structure to a markdown table."""
+    rows = collect_all_rows(data)
 
     lines = [
-        f"# {root_name}",
+        f"# {data['name']}",
         "",
         "| Parent | Function | Description |",
         "|--------|----------|-------------|",
@@ -199,12 +196,7 @@ def yaml_to_markdown(data: dict) -> str:
 
 def yaml_to_csv(data: dict) -> str:
     """Convert a functional decomposition YAML structure to a CSV table."""
-    rows: list[tuple[str, str, str]] = []
-    root_name = data["name"]
-    rows.append(("", root_name, data.get("description", "")))
-    for function in data.get("functions", []):
-        collect_functions(function, root_name, rows)
-
+    rows = collect_all_rows(data)
     output = io.StringIO()
     writer = csv.writer(output)
     writer.writerow(["Parent", "Function", "Description"])
@@ -282,9 +274,9 @@ def run_function_command(args):
 
     output_dir.mkdir(parents=True, exist_ok=True)
 
-    root = getattr(args, "root", None)
-    filters = getattr(args, "filter", None)
-    include_descendants = getattr(args, "include_descendants", False)
+    root = args.root
+    filters = args.filter
+    include_descendants = args.include_descendants
 
     if input_path.is_file():
         process_file(input_path, output_dir, root, filters, include_descendants)
