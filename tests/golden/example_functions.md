@@ -1,0 +1,15 @@
+# Example System
+
+| Parent | Function | Description |
+|--------|----------|-------------|
+| Example System | Power Management | Manage the generation, storage, and distribution of power. |
+| Power Management | Generate Power | Convert energy sources into electrical power. |
+| Power Management | Store Power | Store electrical power for later use. |
+| Power Management | Distribute Power | Route power to subsystems as needed. |
+| Example System | Thermal Management | Monitor and control system temperatures. |
+| Thermal Management | Detect Temperature | Measure temperature at key points. |
+| Thermal Management | Cool Components | Actively cool components that exceed thresholds. |
+| Example System | Data Processing | Handle the collection, transformation, and storage of data. |
+| Data Processing | Collect Data | Gather raw data from sensors and inputs. |
+| Data Processing | Transform Data | Process and normalize collected data. |
+| Data Processing | Store Data | Persist processed data for retrieval. |

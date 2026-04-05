@@ -8,6 +8,7 @@ definitions, and renders them to SVG using the d2 tool.
 import argparse
 import csv
 import io
+import re
 import subprocess
 import sys
 from pathlib import Path
@@ -18,6 +19,61 @@ import yaml
 def load_yaml(path: Path) -> dict:
     with open(path) as f:
         return yaml.safe_load(f)
+
+
+def find_subtree(data: dict, root_name: str) -> dict | None:
+    """Find and return the subtree rooted at the node with the given name."""
+    if data["name"] == root_name:
+        return data
+    for child in data.get("functions", []):
+        result = find_subtree(child, root_name)
+        if result is not None:
+            return result
+    return None
+
+
+def filter_tree(data: dict, filters: list[str], include_descendants: bool) -> dict:
+    """Return a pruned copy of the tree containing only matching functions and their ancestors.
+
+    A function matches if any filter regex matches its name via re.search().
+    The root node is always included. Intermediary nodes on the path from root
+    to a matched node are included to keep the tree connected.
+    If include_descendants is True, all descendants of matched nodes are also included.
+    """
+    compiled = [re.compile(f) for f in filters]
+
+    def matches(name: str) -> bool:
+        return any(p.search(name) for p in compiled)
+
+    def prune(node: dict) -> dict | None:
+        """Return a pruned copy of node, or None if it should be excluded."""
+        node_matched = matches(node["name"])
+        children = node.get("functions", [])
+
+        if node_matched and include_descendants:
+            # Include this node and all descendants unchanged
+            return dict(node)
+
+        pruned_children = []
+        for child in children:
+            pruned = prune(child)
+            if pruned is not None:
+                pruned_children.append(pruned)
+
+        if node_matched or pruned_children:
+            result = {k: v for k, v in node.items() if k != "functions"}
+            if pruned_children:
+                result["functions"] = pruned_children
+            return result
+
+        return None
+
+    # Root is always included, so start pruning from children
+    result = prune(data)
+    if result is None:
+        # No matches found — return root only
+        return {k: v for k, v in data.items() if k != "functions"}
+    return result
 
 
 def is_leaf(function: dict) -> bool:
@@ -154,9 +210,20 @@ def render_d2(d2_path: Path, output_path: Path):
         sys.exit(1)
 
 
-def process_file(yaml_path: Path, output_dir: Path):
+def process_file(yaml_path: Path, output_dir: Path, root: str | None = None,
+                  filters: list[str] | None = None, include_descendants: bool = False):
     """Process a single YAML file: generate .d2, .svg, .png, .md, and .csv."""
     data = load_yaml(yaml_path)
+
+    if root is not None:
+        subtree = find_subtree(data, root)
+        if subtree is None:
+            print(f"Error: root function '{root}' not found in {yaml_path}.", file=sys.stderr)
+            sys.exit(1)
+        data = subtree
+
+    if filters:
+        data = filter_tree(data, filters, include_descendants)
 
     stem = yaml_path.stem
     d2_path = output_dir / f"{stem}_functions.d2"
@@ -195,15 +262,19 @@ def run_function_command(args):
 
     output_dir.mkdir(parents=True, exist_ok=True)
 
+    root = getattr(args, "root", None)
+    filters = getattr(args, "filter", None)
+    include_descendants = getattr(args, "include_descendants", False)
+
     if input_path.is_file():
-        process_file(input_path, output_dir)
+        process_file(input_path, output_dir, root, filters, include_descendants)
     elif input_path.is_dir():
         yaml_files = sorted(input_path.glob("*.yaml")) + sorted(input_path.glob("*.yml"))
         if not yaml_files:
             print(f"No YAML files found in {input_path}.", file=sys.stderr)
             sys.exit(1)
         for yaml_file in yaml_files:
-            process_file(yaml_file, output_dir)
+            process_file(yaml_file, output_dir, root, filters, include_descendants)
     else:
         print(f"Error: {input_path} is not a file or directory.", file=sys.stderr)
         sys.exit(1)
@@ -230,6 +301,25 @@ def main():
         type=Path,
         default=Path("output"),
         help="Output directory for .d2 and .svg files (default: output/).",
+    )
+    function_parser.add_argument(
+        "--root",
+        type=str,
+        default=None,
+        help="Name of the function to use as the root of the output tree.",
+    )
+    function_parser.add_argument(
+        "--filter",
+        action="append",
+        default=None,
+        help="Regex pattern to filter functions by name (repeatable). "
+             "Matches as substring by default; use anchors for exact match.",
+    )
+    function_parser.add_argument(
+        "--include-descendants",
+        action="store_true",
+        default=False,
+        help="When filtering, include all descendants of matched functions.",
     )
     function_parser.set_defaults(func=run_function_command)
 

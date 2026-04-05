@@ -45,4 +45,7 @@ for f in "$REPO_ROOT"/functional_decomposition/*.yaml "$REPO_ROOT"/functional_de
     fi
 done
 
+echo "Running pytest..."
+"$REPO_ROOT/.venv/bin/pytest" "$REPO_ROOT/tests/" -v
+
 echo "All tests passed."
