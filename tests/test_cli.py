@@ -1,5 +1,6 @@
 """Semantic tests for the systems-engineering CLI output."""
 
+import argparse
 import csv
 import importlib.metadata
 import io
@@ -19,6 +20,7 @@ from systems_engineering.cli import (
     filter_tree,
     find_subtree,
     load_yaml,
+    run_function_command,
     run_product_verify_command,
     yaml_to_csv,
     yaml_to_d2,
@@ -27,8 +29,8 @@ from systems_engineering.cli import (
 )
 
 REPO_ROOT = Path(__file__).parent.parent
-EXAMPLE_YAML = REPO_ROOT / "functional_decomposition" / "example.yaml"
-PRODUCT_EXAMPLE_YAML = REPO_ROOT / "product_breakdown" / "example.yaml"
+EXAMPLE_YAML = REPO_ROOT / "example" / "functional_decomposition.yaml"
+PRODUCT_EXAMPLE_YAML = REPO_ROOT / "example" / "product_breakdown.yaml"
 GOLDEN_DIR = REPO_ROOT / "tests" / "golden"
 
 HAS_D2 = shutil.which("d2") is not None
@@ -217,7 +219,7 @@ class TestCsvOutput:
 class TestSvgOutput:
     @pytest.fixture(autouse=True)
     def setup(self, generated_output):
-        self.svg_path = generated_output / "example_functions.svg"
+        self.svg_path = generated_output / "functional_decomposition.svg"
         self.tree = ET.parse(self.svg_path)
 
     def test_valid_xml(self):
@@ -248,7 +250,7 @@ class TestSvgOutput:
 class TestPngOutput:
     @pytest.fixture(autouse=True)
     def setup(self, generated_output):
-        self.png_path = generated_output / "example_functions.png"
+        self.png_path = generated_output / "functional_decomposition.png"
 
     def test_png_magic_bytes(self):
         with open(self.png_path, "rb") as f:
@@ -269,29 +271,29 @@ class TestGoldenFiles:
 
     def test_d2_matches_golden(self):
         generated = yaml_to_d2(self.data)
-        golden = (GOLDEN_DIR / "example_functions.d2").read_text()
+        golden = (GOLDEN_DIR / "functional_decomposition.d2").read_text()
         assert generated == golden, "D2 output does not match golden file"
 
     def test_markdown_matches_golden(self):
         generated = yaml_to_markdown(self.data)
-        golden = (GOLDEN_DIR / "example_functions.md").read_text()
+        golden = (GOLDEN_DIR / "functional_decomposition.md").read_text()
         assert generated == golden, "Markdown output does not match golden file"
 
     def test_csv_matches_golden(self):
         generated = yaml_to_csv(self.data)
-        golden = (GOLDEN_DIR / "example_functions.csv").open(newline="").read()
+        golden = (GOLDEN_DIR / "functional_decomposition.csv").open(newline="").read()
         assert generated == golden, "CSV output does not match golden file"
 
     @pytest.mark.skipif(not HAS_D2, reason="d2 not installed")
     def test_svg_matches_golden(self, generated_output):
-        generated = (generated_output / "example_functions.svg").read_bytes()
-        golden = (GOLDEN_DIR / "example_functions.svg").read_bytes()
+        generated = (generated_output / "functional_decomposition.svg").read_bytes()
+        golden = (GOLDEN_DIR / "functional_decomposition.svg").read_bytes()
         assert generated == golden, "SVG output does not match golden file"
 
     @pytest.mark.skipif(not HAS_D2, reason="d2 not installed")
     def test_png_matches_golden(self, generated_output):
-        generated = (generated_output / "example_functions.png").read_bytes()
-        golden = (GOLDEN_DIR / "example_functions.png").read_bytes()
+        generated = (generated_output / "functional_decomposition.png").read_bytes()
+        golden = (GOLDEN_DIR / "functional_decomposition.png").read_bytes()
         assert generated == golden, "PNG output does not match golden file"
 
 
@@ -580,3 +582,45 @@ class TestVersion:
         expected_version = importlib.metadata.version("systems-engineering-diagrams")
         assert result.returncode == 0
         assert expected_version in result.stdout
+
+
+class TestDirectoryDefaults:
+    def test_function_command_directory_without_default_file_exits(self, tmp_path):
+        """When given a directory without functional_decomposition.yaml, should exit with error."""
+        (tmp_path / "empty_dir").mkdir()
+        args = argparse.Namespace(
+            input=tmp_path / "empty_dir",
+            output=tmp_path / "output",
+            root=None,
+            filter=None,
+            include_descendants=False,
+        )
+        with pytest.raises(SystemExit):
+            run_function_command(args)
+
+    def test_function_command_directory_resolves_default_file(self, tmp_path):
+        """When given a directory containing functional_decomposition.yaml, run_function_command processes it."""
+        (tmp_path / "input").mkdir()
+        shutil.copy(EXAMPLE_YAML, tmp_path / "input" / "functional_decomposition.yaml")
+        output_dir = tmp_path / "output"
+        args = argparse.Namespace(
+            input=tmp_path / "input",
+            output=output_dir,
+            root=None,
+            filter=None,
+            include_descendants=False,
+        )
+        run_function_command(args)
+        assert (output_dir / "functional_decomposition.d2").exists()
+
+    def test_product_verify_directory_resolves_default_files(self, tmp_path, capsys):
+        """When given directories, product verify should resolve default filenames."""
+        shutil.copy(EXAMPLE_YAML, tmp_path / "functional_decomposition.yaml")
+        shutil.copy(PRODUCT_EXAMPLE_YAML, tmp_path / "product_breakdown.yaml")
+        args = argparse.Namespace(
+            functional_decomposition=tmp_path,
+            product_breakdown=tmp_path,
+        )
+        run_product_verify_command(args)
+        captured = capsys.readouterr()
+        assert "\u2705 All functions allocated." in captured.out

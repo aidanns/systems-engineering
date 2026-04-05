@@ -239,10 +239,10 @@ def process_file(yaml_path: Path, output_dir: Path, root: str | None = None,
         data = filter_tree(data, filters, include_descendants)
 
     stem = yaml_path.stem
-    d2_path = output_dir / f"{stem}_functions.d2"
-    svg_path = output_dir / f"{stem}_functions.svg"
-    png_path = output_dir / f"{stem}_functions.png"
-    md_path = output_dir / f"{stem}_functions.md"
+    d2_path = output_dir / f"{stem}.d2"
+    svg_path = output_dir / f"{stem}.svg"
+    png_path = output_dir / f"{stem}.png"
+    md_path = output_dir / f"{stem}.md"
 
     d2_content = yaml_to_d2(data)
     d2_path.write_text(d2_content)
@@ -258,7 +258,7 @@ def process_file(yaml_path: Path, output_dir: Path, root: str | None = None,
     md_path.write_text(md_content)
     print(f"Written: {md_path}")
 
-    csv_path = output_dir / f"{stem}_functions.csv"
+    csv_path = output_dir / f"{stem}.csv"
     csv_content = yaml_to_csv(data)
     csv_path.write_text(csv_content)
     print(f"Written: {csv_path}")
@@ -285,10 +285,28 @@ def collect_allocated_functions(data: dict) -> set[str]:
     return allocated
 
 
+def resolve_directory_to_file(dir_path: Path, default_stem: str) -> Path:
+    """If dir_path is a directory, look for default_stem.yaml (or .yml) inside it.
+
+    Returns the resolved file path (which may not exist if neither extension was found).
+    If dir_path is not a directory, returns it unchanged.
+    """
+    if not dir_path.is_dir():
+        return dir_path
+    candidate = dir_path / f"{default_stem}.yaml"
+    if candidate.exists():
+        return candidate
+    candidate = dir_path / f"{default_stem}.yml"
+    if candidate.exists():
+        return candidate
+    # Return the .yaml path so error messages reference the expected filename
+    return dir_path / f"{default_stem}.yaml"
+
+
 def run_product_verify_command(args):
     """Handle the 'product verify' subcommand."""
-    fd_path: Path = args.functional_decomposition
-    pb_path: Path = args.product_breakdown
+    fd_path: Path = resolve_directory_to_file(args.functional_decomposition, "functional_decomposition")
+    pb_path: Path = resolve_directory_to_file(args.product_breakdown, "product_breakdown")
 
     if not fd_path.exists():
         print(f"Error: {fd_path} does not exist.", file=sys.stderr)
@@ -338,12 +356,11 @@ def run_function_command(args):
     if input_path.is_file():
         process_file(input_path, output_dir, root, filters, include_descendants)
     elif input_path.is_dir():
-        yaml_files = sorted(input_path.glob("*.yaml")) + sorted(input_path.glob("*.yml"))
-        if not yaml_files:
-            print(f"No YAML files found in {input_path}.", file=sys.stderr)
+        default_file = resolve_directory_to_file(input_path, "functional_decomposition")
+        if not default_file.exists():
+            print(f"Error: no functional_decomposition.yaml found in {input_path}.", file=sys.stderr)
             sys.exit(1)
-        for yaml_file in yaml_files:
-            process_file(yaml_file, output_dir, root, filters, include_descendants)
+        process_file(default_file, output_dir, root, filters, include_descendants)
     else:
         print(f"Error: {input_path} is not a file or directory.", file=sys.stderr)
         sys.exit(1)
@@ -368,7 +385,7 @@ def main():
     function_parser.add_argument(
         "input",
         type=Path,
-        help="YAML file or directory containing YAML files.",
+        help="YAML file or directory (expects functional_decomposition.yaml).",
     )
     function_parser.add_argument(
         "-o", "--output",
@@ -415,13 +432,13 @@ def main():
         "-p", "--product-breakdown",
         type=Path,
         required=True,
-        help="Product breakdown YAML file.",
+        help="Product breakdown YAML file or directory (expects product_breakdown.yaml).",
     )
     verify_parser.add_argument(
         "-f", "--functional-decomposition",
         type=Path,
         required=True,
-        help="Functional decomposition YAML file.",
+        help="Functional decomposition YAML file or directory (expects functional_decomposition.yaml).",
     )
     verify_parser.set_defaults(func=run_product_verify_command)
 
