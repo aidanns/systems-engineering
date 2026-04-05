@@ -30,6 +30,12 @@ for f in "$REPO_ROOT"/functional_decomposition/*.yaml "$REPO_ROOT"/functional_de
         echo "  FAIL: $f (no .d2 output)" >&2
         exit 1
     fi
+    if [ -f "$TMPDIR/$stem.csv" ]; then
+        echo "  OK: $f -> $stem.csv"
+    else
+        echo "  FAIL: $f (no .csv output)" >&2
+        exit 1
+    fi
 done
 
 echo "All tests passed."

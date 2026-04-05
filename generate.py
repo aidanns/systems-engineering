@@ -6,6 +6,8 @@ definitions, and renders them to SVG using the d2 tool.
 """
 
 import argparse
+import csv
+import io
 import subprocess
 import sys
 from pathlib import Path
@@ -120,6 +122,20 @@ def yaml_to_markdown(data: dict) -> str:
     return "\n".join(lines) + "\n"
 
 
+def yaml_to_csv(data: dict) -> str:
+    """Convert a functional decomposition YAML structure to a CSV table."""
+    rows: list[tuple[str, str, str]] = []
+    root_name = data["name"]
+    for function in data.get("functions", []):
+        collect_functions(function, root_name, rows)
+
+    output = io.StringIO()
+    writer = csv.writer(output)
+    writer.writerow(["Parent", "Function", "Description"])
+    writer.writerows(rows)
+    return output.getvalue()
+
+
 def render_d2(d2_path: Path, output_path: Path):
     """Run d2 to render a .d2 file to the given output format (determined by extension)."""
     try:
@@ -139,7 +155,7 @@ def render_d2(d2_path: Path, output_path: Path):
 
 
 def process_file(yaml_path: Path, output_dir: Path):
-    """Process a single YAML file: generate .d2, .svg, .png, and .md."""
+    """Process a single YAML file: generate .d2, .svg, .png, .md, and .csv."""
     data = load_yaml(yaml_path)
 
     stem = yaml_path.stem
@@ -161,6 +177,11 @@ def process_file(yaml_path: Path, output_dir: Path):
     md_content = yaml_to_markdown(data)
     md_path.write_text(md_content)
     print(f"Written: {md_path}")
+
+    csv_path = output_dir / f"{stem}.csv"
+    csv_content = yaml_to_csv(data)
+    csv_path.write_text(csv_content)
+    print(f"Written: {csv_path}")
 
 
 def run_function_command(args):
