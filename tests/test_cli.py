@@ -266,6 +266,43 @@ class TestPngOutput:
         assert self.png_path.stat().st_size > 1024
 
 
+# --- Product diagram CLI tests ---
+
+
+class TestProductDiagramCLI:
+    def test_product_diagram_subcommand(self, tmp_path):
+        cli_path = Path(sys.executable).parent / "systems-engineering"
+        result = subprocess.run(
+            [str(cli_path), "product", "diagram",
+             str(PRODUCT_EXAMPLE_YAML), "-o", str(tmp_path)],
+            capture_output=True, text=True,
+        )
+        assert result.returncode == 0
+        assert (tmp_path / "example_products.d2").exists()
+        assert (tmp_path / "example_products.md").exists()
+        assert (tmp_path / "example_products.csv").exists()
+
+    def test_product_diagram_nonexistent_input(self, tmp_path):
+        cli_path = Path(sys.executable).parent / "systems-engineering"
+        result = subprocess.run(
+            [str(cli_path), "product", "diagram",
+             str(tmp_path / "nonexistent.yaml"), "-o", str(tmp_path)],
+            capture_output=True, text=True,
+        )
+        assert result.returncode != 0
+
+    def test_product_diagram_directory_input(self, tmp_path):
+        cli_path = Path(sys.executable).parent / "systems-engineering"
+        pb_dir = REPO_ROOT / "product_breakdown"
+        result = subprocess.run(
+            [str(cli_path), "product", "diagram",
+             str(pb_dir), "-o", str(tmp_path)],
+            capture_output=True, text=True,
+        )
+        assert result.returncode == 0
+        assert (tmp_path / "example_products.d2").exists()
+
+
 # --- Golden file tests ---
 
 
@@ -300,6 +337,42 @@ class TestGoldenFiles:
         generated = (generated_output / "functional_decomposition.png").read_bytes()
         golden = (GOLDEN_DIR / "functional_decomposition.png").read_bytes()
         assert generated == golden, "PNG output does not match golden file"
+
+
+# --- Product golden file tests ---
+
+
+class TestProductGoldenFiles:
+    @pytest.fixture(autouse=True)
+    def setup(self):
+        self.data = load_yaml(PRODUCT_EXAMPLE_YAML)
+
+    def test_d2_matches_golden(self):
+        generated = product_yaml_to_d2(self.data)
+        golden = (GOLDEN_DIR / "example_products.d2").read_text()
+        assert generated == golden, "Product D2 output does not match golden file"
+
+    def test_markdown_matches_golden(self):
+        generated = product_yaml_to_markdown(self.data)
+        golden = (GOLDEN_DIR / "example_products.md").read_text()
+        assert generated == golden, "Product markdown output does not match golden file"
+
+    def test_csv_matches_golden(self):
+        generated = product_yaml_to_csv(self.data)
+        golden = (GOLDEN_DIR / "example_products.csv").open(newline="").read()
+        assert generated == golden, "Product CSV output does not match golden file"
+
+    @pytest.mark.skipif(not HAS_D2, reason="d2 not installed")
+    def test_svg_matches_golden(self, generated_product_output):
+        generated = (generated_product_output / "example_products.svg").read_bytes()
+        golden = (GOLDEN_DIR / "example_products.svg").read_bytes()
+        assert generated == golden, "Product SVG output does not match golden file"
+
+    @pytest.mark.skipif(not HAS_D2, reason="d2 not installed")
+    def test_png_matches_golden(self, generated_product_output):
+        generated = (generated_product_output / "example_products.png").read_bytes()
+        golden = (GOLDEN_DIR / "example_products.png").read_bytes()
+        assert generated == golden, "Product PNG output does not match golden file"
 
 
 # --- find_subtree tests ---
