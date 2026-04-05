@@ -12,7 +12,8 @@ This project provides CLI tools to generate systems engineering diagrams from YA
 
 ### Supported Diagram Types
 
-- **Functional Decomposition** — Define functional hierarchies in YAML and render them as SVG diagrams.
+- **Functional Decomposition** — Define functional hierarchies in YAML and render them as SVG/PNG diagrams, markdown tables, and CSV exports.
+- **Product Breakdown** — Define product breakdowns with configuration items and verify that all leaf functions are allocated.
 
 ## Installation
 
@@ -31,13 +32,17 @@ Requires a `HOMEBREW_GITHUB_API_TOKEN` environment variable with a GitHub person
 - [d2](https://d2lang.com/) installed and available on PATH
 - [yq](https://github.com/mikefarah/yq) installed and available on PATH (required for tests)
 
-> **Note:** systems-engineering is a development dependency of itself — the installed CLI is used to regenerate the design documentation in `design/`.
-
 ```bash
 scripts/build.sh
 ```
 
 ## Usage
+
+Check the installed version:
+
+```bash
+systems-engineering --version
+```
 
 ### Functional Decomposition
 
@@ -69,9 +74,48 @@ systems-engineering function functional_decomposition/example.yaml -o output/
 
 # Render all files in a directory
 systems-engineering function functional_decomposition/ -o output/
+
+# Render a subtree rooted at a specific function
+systems-engineering function functional_decomposition/example.yaml -o output/ --root "Function A"
+
+# Filter to functions matching a regex (case-insensitive, repeatable)
+systems-engineering function functional_decomposition/example.yaml -o output/ --filter "function"
+
+# Include all descendants of matched functions
+systems-engineering function functional_decomposition/example.yaml -o output/ --filter "function" --include-descendants
 ```
 
 This produces `.d2`, `.svg`, `.png`, `.md`, and `.csv` files in the output directory.
+
+### Product Breakdown
+
+1. Create a product breakdown YAML file in `product_breakdown/`:
+
+```yaml
+name: System Name
+components:
+  - name: Subsystem A
+    description: Description of Subsystem A.
+    components:
+      - name: Sub-subsystem A1
+        description: Description of Sub-subsystem A1.
+        configuration_items:
+          - name: Hardware Unit 1
+            description: Description of Hardware Unit 1.
+            functions:
+              - Function A1
+              - Function A2
+```
+
+2. Verify that all leaf functions from a functional decomposition are allocated to configuration items:
+
+```bash
+systems-engineering product verify \
+    -p product_breakdown/example.yaml \
+    -f functional_decomposition/example.yaml
+```
+
+This checks that every leaf function has a corresponding allocation in the product breakdown and warns about any allocations that don't match a known function.
 
 ## Releasing
 
