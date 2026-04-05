@@ -65,6 +65,16 @@ for f in "$REPO_ROOT"/product_breakdown/*.yaml "$REPO_ROOT"/product_breakdown/*.
             exit 1
         fi
     done
+    # Check that CSV row count matches components + CIs + root.
+    csv_file="${stem}_products.csv"
+    csv_rows=$(( $(wc -l < "$TMPDIR/$csv_file") - 1 ))  # subtract header
+    yaml_components=$(yq '[.. | select(has("name")) | .name] | length' "$f")
+    if [ "$csv_rows" -eq "$yaml_components" ]; then
+        echo "  OK: $f -> $csv_file has $csv_rows data rows matching $yaml_components nodes"
+    else
+        echo "  FAIL: $f -> $csv_file has $csv_rows data rows but expected $yaml_components nodes" >&2
+        exit 1
+    fi
 done
 
 echo "Running pytest..."
