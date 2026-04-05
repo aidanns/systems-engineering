@@ -13,7 +13,7 @@ This project provides CLI tools to generate systems engineering diagrams from YA
 ### Supported Diagram Types
 
 - **Functional Decomposition** — Define functional hierarchies in YAML and render them as SVG/PNG diagrams, markdown tables, and CSV exports.
-- **Product Breakdown Verification** — Define product breakdowns with configuration items and verify that all leaf functions are allocated.
+- **Product Breakdown** — Define product breakdowns with configuration items and verify that all leaf functions are allocated.
 
 ## Installation
 
@@ -31,8 +31,6 @@ Requires a `HOMEBREW_GITHUB_API_TOKEN` environment variable with a GitHub person
 - Python 3.10+
 - [d2](https://d2lang.com/) installed and available on PATH
 - [yq](https://github.com/mikefarah/yq) installed and available on PATH (required for tests)
-
-> **Note:** systems-engineering is a development dependency of itself — the installed CLI is used to regenerate the design documentation in `design/`.
 
 ```bash
 scripts/build.sh
@@ -89,7 +87,7 @@ systems-engineering function functional_decomposition/example.yaml -o output/ --
 
 This produces `.d2`, `.svg`, `.png`, `.md`, and `.csv` files in the output directory.
 
-### Product Breakdown Verification
+### Product Breakdown
 
 1. Create a product breakdown YAML file in `product_breakdown/`:
 
