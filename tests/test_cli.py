@@ -1,9 +1,12 @@
 """Semantic tests for the systems-engineering CLI output."""
 
 import csv
+import importlib.metadata
 import io
 import re
 import shutil
+import subprocess
+import sys
 import xml.etree.ElementTree as ET
 from pathlib import Path
 
@@ -561,3 +564,19 @@ class TestProductVerify:
         args = _make_verify_args(EXAMPLE_YAML, tmp_path / "nonexistent.yaml")
         with pytest.raises(SystemExit):
             run_product_verify_command(args)
+
+
+# --- version flag tests ---
+
+
+class TestVersion:
+    def test_version_flag(self):
+        cli_path = Path(sys.executable).parent / "systems-engineering"
+        result = subprocess.run(
+            [str(cli_path), "--version"],
+            capture_output=True,
+            text=True,
+        )
+        expected_version = importlib.metadata.version("systems-engineering-diagrams")
+        assert result.returncode == 0
+        assert expected_version in result.stdout

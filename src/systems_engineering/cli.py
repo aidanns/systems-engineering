@@ -7,6 +7,7 @@ generates d2 diagrams, and verifies function-to-CI allocations.
 
 import argparse
 import csv
+import importlib.metadata
 import io
 import re
 import subprocess
@@ -351,6 +352,11 @@ def run_function_command(args):
 def main():
     parser = argparse.ArgumentParser(
         description="Generate systems engineering diagrams from YAML definitions."
+    )
+    parser.add_argument(
+        "--version",
+        action="version",
+        version=f"%(prog)s {importlib.metadata.version('systems-engineering-diagrams')}",
     )
     subparsers = parser.add_subparsers(dest="command", required=True)
 
