@@ -15,19 +15,32 @@ for f in "$REPO_ROOT"/functional_decomposition/*.yaml "$REPO_ROOT"/functional_de
     "$PYTHON" -c "import yaml; yaml.safe_load(open('$f'))" && echo "  OK: $f" || { echo "  FAIL: $f"; exit 1; }
 done
 
-echo "Checking d2 generation (no rendering)..."
+echo "Checking file generation..."
 TMPDIR="$(mktemp -d)"
 trap 'rm -rf "$TMPDIR"' EXIT
 for f in "$REPO_ROOT"/functional_decomposition/*.yaml "$REPO_ROOT"/functional_decomposition/*.yml; do
     [ -f "$f" ] || continue
-    # Run generate.py but expect it to fail at d2 rendering if d2 is not installed.
-    # We just check that the .d2 file is created.
+    # Run generate.py — rendering may fail if d2 is not installed, but we still
+    # check whichever output files were created.
     "$PYTHON" "$REPO_ROOT/generate.py" function "$f" -o "$TMPDIR" 2>/dev/null || true
     stem="$(basename "${f%.*}")"
-    if [ -f "$TMPDIR/$stem.d2" ]; then
-        echo "  OK: $f -> $stem.d2"
+    for ext in d2 svg png md csv; do
+        output_file="${stem}_functions.$ext"
+        if [ -f "$TMPDIR/$output_file" ]; then
+            echo "  OK: $f -> $output_file"
+        else
+            echo "  FAIL: $f (no $output_file output)" >&2
+            exit 1
+        fi
+    done
+    # Check that CSV row count matches the number of functions in the YAML.
+    csv_file="${stem}_functions.csv"
+    csv_rows=$(( $(wc -l < "$TMPDIR/$csv_file") - 1 ))  # subtract header
+    yaml_functions=$(yq '[.functions // [] | .. | select(has("name")) | .name] | length' "$f")
+    if [ "$csv_rows" -eq "$yaml_functions" ]; then
+        echo "  OK: $f -> $csv_file has $csv_rows data rows matching $yaml_functions functions"
     else
-        echo "  FAIL: $f (no .d2 output)" >&2
+        echo "  FAIL: $f -> $csv_file has $csv_rows data rows but YAML has $yaml_functions functions" >&2
         exit 1
     fi
 done
