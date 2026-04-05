@@ -1,0 +1,35 @@
+name: Systems Engineering CLI
+description: Generate systems engineering artefacts from YAML definitions.
+functions:
+  - name: Input Processing
+    description: Load and parse YAML definitions.
+    functions:
+      - name: Load YAML
+        description: Read and parse YAML files from disk.
+      - name: Find Subtree
+        description: Extract a subtree rooted at a named node.
+      - name: Filter Tree
+        description: Prune the tree to matching functions and their ancestors, optionally including all descendants of matched nodes.
+  - name: Output Generation
+    description: Convert parsed data into output formats.
+    functions:
+      - name: Generate D2
+        description: Convert functional decomposition to d2 diagram definition.
+      - name: Generate Markdown
+        description: Convert functional decomposition to a markdown table.
+      - name: Generate CSV
+        description: Convert functional decomposition to a CSV table.
+  - name: Rendering
+    description: Render d2 definitions to visual formats.
+    functions:
+      - name: Render SVG
+        description: Render a d2 definition to SVG via the d2 tool.
+      - name: Render PNG
+        description: Render a d2 definition to PNG via the d2 tool.
+  - name: CLI Interface
+    description: Parse command-line arguments and orchestrate processing.
+    functions:
+      - name: Argument Parsing
+        description: Parse command-line arguments and subcommands.
+      - name: File Processing
+        description: Orchestrate generation of all output files from a single input or directory.

@@ -31,6 +31,8 @@ Requires a `HOMEBREW_GITHUB_API_TOKEN` environment variable with a GitHub person
 - [d2](https://d2lang.com/) installed and available on PATH
 - [yq](https://github.com/mikefarah/yq) installed and available on PATH (required for tests)
 
+> **Note:** systems-engineering is a development dependency of itself — the installed CLI is used to regenerate the design documentation in `design/`.
+
 ```bash
 scripts/build.sh
 ```

@@ -1,0 +1,19 @@
+# Systems Engineering CLI
+
+| Parent | Function | Description |
+|--------|----------|-------------|
+|  | Systems Engineering CLI | Generate systems engineering artefacts from YAML definitions. |
+| Systems Engineering CLI | Input Processing | Load and parse YAML definitions. |
+| Input Processing | Load YAML | Read and parse YAML files from disk. |
+| Input Processing | Find Subtree | Extract a subtree rooted at a named node. |
+| Input Processing | Filter Tree | Prune the tree to matching functions and their ancestors, optionally including all descendants of matched nodes. |
+| Systems Engineering CLI | Output Generation | Convert parsed data into output formats. |
+| Output Generation | Generate D2 | Convert functional decomposition to d2 diagram definition. |
+| Output Generation | Generate Markdown | Convert functional decomposition to a markdown table. |
+| Output Generation | Generate CSV | Convert functional decomposition to a CSV table. |
+| Systems Engineering CLI | Rendering | Render d2 definitions to visual formats. |
+| Rendering | Render SVG | Render a d2 definition to SVG via the d2 tool. |
+| Rendering | Render PNG | Render a d2 definition to PNG via the d2 tool. |
+| Systems Engineering CLI | CLI Interface | Parse command-line arguments and orchestrate processing. |
+| CLI Interface | Argument Parsing | Parse command-line arguments and subcommands. |
+| CLI Interface | File Processing | Orchestrate generation of all output files from a single input or directory. |

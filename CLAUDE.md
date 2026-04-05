@@ -10,7 +10,7 @@ CLI tools for generating systems engineering diagrams from YAML definitions, ren
 - `pyproject.toml` — Python package configuration. Defines the `systems-engineering` console entry point.
 - `functional_decomposition/` — YAML files defining functional decomposition hierarchies.
 - `product_breakdown/` — YAML files defining product breakdown hierarchies with CI-to-function allocations.
-- `output/` — Generated `.d2`, `.svg`, `.png`, and `.md` files (gitignored).
+- `output/` — Generated `.d2`, `.svg`, `.png`, `.md`, and `.csv` files (gitignored).
 - `scripts/build.sh` — Creates virtualenv and installs the package in editable mode.
 - `scripts/test.sh` — Validates YAML files, output file generation, and runs pytest semantic checks.
 - `tests/test_cli.py` — Pytest suite with structural and golden file tests for all output types.
@@ -18,6 +18,7 @@ CLI tools for generating systems engineering diagrams from YAML definitions, ren
 - `scripts/regenerate_golden.sh` — Regenerates golden files in `tests/golden/` from current CLI output.
 - `scripts/generate.sh` — Generates all diagrams from `functional_decomposition/` to `output/`.
 - `scripts/release.sh` — Creates a release: auto-determines version bump, runs tests, commits, tags, and pushes.
+- `design/` — CLI's own functional decomposition (dogfooding). Contains `functions.yaml` source and generated artefacts (SVG, CSV, etc.) checked into the repo.
 
 ## YAML Schema for Functional Decomposition
 
@@ -86,6 +87,7 @@ scripts/generate.sh /path/to/output
 - All bash scripts in `scripts/` must be portable across macOS and Linux.
 - Before finishing work, confirm that `scripts/build.sh`, `scripts/test.sh`, and `scripts/generate.sh` all run successfully.
 - When adding new output types or changing output format, regenerate and commit updated golden files in `tests/golden/` so changes are reviewable during PR review.
+- Keep `design/functions.yaml` up to date as new functionality is added to the CLI. Regenerate with: `.venv/bin/systems-engineering function design/functions.yaml -o design/`
 
 ## Releasing
 
