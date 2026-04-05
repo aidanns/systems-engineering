@@ -17,7 +17,7 @@ CLI tools for generating systems engineering diagrams from YAML definitions, ren
 - `scripts/regenerate_golden.sh` — Regenerates golden files in `tests/golden/` from current CLI output.
 - `scripts/generate.sh` — Generates all diagrams from `example/` to `output/`.
 - `scripts/release.sh` — Creates a release: auto-determines version bump, runs tests, commits, tags, and pushes.
-- `design/` — CLI's own functional decomposition (dogfooding). Contains `functions.yaml` source and generated artefacts (SVG, CSV, etc.) checked into the repo. Keep updated per Conventions.
+- `design/` — CLI's own functional decomposition and product breakdown (dogfooding). Contains `functions.yaml` and `product_breakdown.yaml` sources and generated artefacts (SVG, CSV, etc.) checked into the repo. Keep updated per Conventions.
 
 ## YAML Schema for Functional Decomposition
 
@@ -96,6 +96,7 @@ scripts/generate.sh /path/to/output
 - Before finishing work, confirm that `scripts/build.sh`, `scripts/test.sh`, and `scripts/generate.sh` all run successfully.
 - When adding new output types or changing output format, regenerate and commit updated golden files in `tests/golden/` so changes are reviewable during PR review.
 - Keep `design/functions.yaml` up to date as new functionality is added to the CLI. Regenerate with: `.venv/bin/systems-engineering function design/functions.yaml -o design/`
+- Keep `design/product_breakdown.yaml` up to date when components or dependencies change. Regenerate with: `.venv/bin/systems-engineering product diagram design/product_breakdown.yaml -o design/`
 - Before finishing implementation work, check that `README.md` is consistent with the current functionality. Update it if new features, flags, or commands have been added.
 
 ## Releasing
