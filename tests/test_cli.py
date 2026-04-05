@@ -743,8 +743,8 @@ class TestProductD2Output:
             "Data Acquisition Module", "Processing Unit", "Storage Module",
         ]
         for name in ci_names:
-            # CI labels have spaces replaced with newlines in d2 output
-            label = name.replace(" ", "\n")
+            # CI labels have spaces replaced with literal \n in d2 output
+            label = name.replace(" ", r"\n")
             assert label in self.d2, (
                 f"CI '{name}' not found in d2 output"
             )
@@ -790,9 +790,8 @@ class TestProductD2Output:
         comp_width_lines = re.findall(r"p\d+\.width: 250", self.d2)
         assert len(comp_width_lines) == 3
 
-    def test_ci_labels_use_newlines(self):
-        # CI names with spaces should have newlines instead
-        # Check that no CI node inside a container has a space in its label
+    def test_ci_labels_use_escaped_newlines(self):
+        # CI names with spaces should use literal \n instead of spaces
         in_container = False
         for line in self.lines:
             if '_container: ""' in line:
@@ -801,8 +800,9 @@ class TestProductD2Output:
                 in_container = False
             elif in_container and re.match(r"\s+p\d+:", line):
                 label = line.split(":", 1)[1].strip()
-                if len(label) > 1:  # skip single-word labels
-                    assert " " not in label or "\n" in label
+                if " " in label:
+                    # Multi-word CI names should have \n instead of spaces
+                    assert False, f"CI label '{label}' contains spaces; should use \\n"
 
     def test_nested_components_support(self):
         """Components with nested sub-components should recurse correctly."""
@@ -822,7 +822,7 @@ class TestProductD2Output:
         d2 = product_yaml_to_d2(nested_data)
         assert "Outer" in d2
         assert "Inner" in d2
-        assert "Leaf\nCI" in d2
+        assert r"Leaf\nCI" in d2
 
     def test_no_function_names_in_output(self):
         """Function names allocated to CIs should NOT appear in the d2 output."""
@@ -960,15 +960,21 @@ class TestProductSvgOutput:
         assert "svg" in self.tree.getroot().tag
 
     def test_svg_contains_component_and_ci_names(self):
-        """Verify component and CI names appear as text elements in the SVG."""
-        svg_texts = {elem.text.strip() for elem in self.tree.iter("{http://www.w3.org/2000/svg}text")
-                     if elem.text and elem.text.strip()}
-        # Component names render as single text elements (no newline conversion)
+        """Verify component and CI names appear as text in the SVG."""
+        # Collect text from both <text> elements and <tspan> children
+        svg_texts = set()
+        for elem in self.tree.iter("{http://www.w3.org/2000/svg}text"):
+            if elem.text and elem.text.strip():
+                svg_texts.add(elem.text.strip())
+            for child in elem:
+                if child.text and child.text.strip():
+                    svg_texts.add(child.text.strip())
+        # Component names render as single text elements
         for name in ["POWER SUBSYSTEM", "THERMAL SUBSYSTEM", "DATA SUBSYSTEM"]:
             assert name in svg_texts, (
                 f"'{name}' not found in SVG text elements"
             )
-        # CI names have spaces converted to newlines, so each word is a separate text element
+        # CI names have newline-separated words rendered as tspan elements
         for word in ["SOLAR", "PANEL", "ASSEMBLY", "BATTERY", "PACK"]:
             assert word in svg_texts, (
                 f"'{word}' not found in SVG text elements"
