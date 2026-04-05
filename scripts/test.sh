@@ -24,7 +24,7 @@ for f in "$REPO_ROOT"/functional_decomposition/*.yaml "$REPO_ROOT"/functional_de
     # check whichever output files were created.
     "$PYTHON" "$REPO_ROOT/generate.py" function "$f" -o "$TMPDIR" 2>/dev/null || true
     stem="$(basename "${f%.*}")"
-    for ext in d2 svg png md csv; do
+    for ext in d2 svg png md; do
         if [ -f "$TMPDIR/$stem.$ext" ]; then
             echo "  OK: $f -> $stem.$ext"
         else
@@ -32,13 +32,20 @@ for f in "$REPO_ROOT"/functional_decomposition/*.yaml "$REPO_ROOT"/functional_de
             exit 1
         fi
     done
+    csv_file="${stem}_functions.csv"
+    if [ -f "$TMPDIR/$csv_file" ]; then
+        echo "  OK: $f -> $csv_file"
+    else
+        echo "  FAIL: $f (no $csv_file output)" >&2
+        exit 1
+    fi
     # Check that CSV row count matches the number of functions in the YAML.
-    csv_rows=$(( $(wc -l < "$TMPDIR/$stem.csv") - 1 ))  # subtract header
+    csv_rows=$(( $(wc -l < "$TMPDIR/$csv_file") - 1 ))  # subtract header
     yaml_functions=$(yq '[.functions // [] | .. | select(has("name")) | .name] | length' "$f")
     if [ "$csv_rows" -eq "$yaml_functions" ]; then
-        echo "  OK: $f -> $stem.csv has $csv_rows data rows matching $yaml_functions functions"
+        echo "  OK: $f -> $csv_file has $csv_rows data rows matching $yaml_functions functions"
     else
-        echo "  FAIL: $f -> $stem.csv has $csv_rows data rows but YAML has $yaml_functions functions" >&2
+        echo "  FAIL: $f -> $csv_file has $csv_rows data rows but YAML has $yaml_functions functions" >&2
         exit 1
     fi
 done

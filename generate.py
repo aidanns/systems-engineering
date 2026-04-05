@@ -178,7 +178,7 @@ def process_file(yaml_path: Path, output_dir: Path):
     md_path.write_text(md_content)
     print(f"Written: {md_path}")
 
-    csv_path = output_dir / f"{stem}.csv"
+    csv_path = output_dir / f"{stem}_functions.csv"
     csv_content = yaml_to_csv(data)
     csv_path.write_text(csv_content)
     print(f"Written: {csv_path}")
