@@ -1,0 +1,44 @@
+name: Example System
+description: An example product breakdown for the Example System.
+components:
+  - name: Power Subsystem
+    description: Hardware for power generation, storage, and distribution.
+    configuration_items:
+      - name: Solar Panel Assembly
+        description: Photovoltaic panels and mounting hardware.
+        functions:
+          - Generate Power
+      - name: Battery Pack
+        description: Lithium-ion battery modules.
+        functions:
+          - Store Power
+      - name: Power Distribution Unit
+        description: Switching and routing hardware for power delivery.
+        functions:
+          - Distribute Power
+  - name: Thermal Subsystem
+    description: Hardware for temperature monitoring and cooling.
+    configuration_items:
+      - name: Temperature Sensor Array
+        description: Thermocouple and RTD sensor network.
+        functions:
+          - Detect Temperature
+      - name: Cooling System
+        description: Active cooling fans and heat exchangers.
+        functions:
+          - Cool Components
+  - name: Data Subsystem
+    description: Hardware for data acquisition, processing, and storage.
+    configuration_items:
+      - name: Data Acquisition Module
+        description: ADC and signal conditioning hardware.
+        functions:
+          - Collect Data
+      - name: Processing Unit
+        description: Embedded compute module for data transformation.
+        functions:
+          - Transform Data
+      - name: Storage Module
+        description: Non-volatile storage for processed data.
+        functions:
+          - Store Data

@@ -9,6 +9,7 @@ CLI tools for generating systems engineering diagrams from YAML definitions, ren
 - `src/systems_engineering/cli.py` — Main CLI entry point. Reads YAML, outputs `.d2` definitions, renders to SVG/PNG via d2.
 - `pyproject.toml` — Python package configuration. Defines the `systems-engineering` console entry point.
 - `functional_decomposition/` — YAML files defining functional decomposition hierarchies.
+- `product_breakdown/` — YAML files defining product breakdown hierarchies with CI-to-function allocations.
 - `output/` — Generated `.d2`, `.svg`, `.png`, and `.md` files (gitignored).
 - `scripts/build.sh` — Creates virtualenv and installs the package in editable mode.
 - `scripts/test.sh` — Validates YAML files, output file generation, and runs pytest semantic checks.
@@ -32,6 +33,23 @@ functions:
         recently_updated: <bool>
 ```
 
+## YAML Schema for Product Breakdown
+
+```yaml
+name: <root product/system name>
+components:
+  - name: <component name>
+    description: <string>              # optional
+    components:                        # optional nested children
+      - name: <sub-component name>
+        description: <string>
+    configuration_items:               # on leaf components only
+      - name: <CI name>
+        description: <string>          # optional
+        functions:                     # allocated function names (strings)
+          - <function name>
+```
+
 ## Commands
 
 ```bash
@@ -49,6 +67,11 @@ scripts/generate.sh /path/to/output
 
 # Generate diagrams from a single file (direct)
 .venv/bin/systems-engineering function functional_decomposition/example.yaml -o output/
+
+# Verify all leaf functions are allocated to configuration items
+.venv/bin/systems-engineering product verify \
+    -p product_breakdown/example.yaml \
+    -f functional_decomposition/example.yaml
 ```
 
 ## Dependencies
