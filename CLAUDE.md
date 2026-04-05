@@ -18,7 +18,7 @@ CLI tools for generating systems engineering diagrams from YAML definitions, ren
 - `scripts/regenerate_golden.sh` — Regenerates golden files in `tests/golden/` from current CLI output.
 - `scripts/generate.sh` — Generates all diagrams from `functional_decomposition/` to `output/`.
 - `scripts/release.sh` — Creates a release: auto-determines version bump, runs tests, commits, tags, and pushes.
-- `design/` — CLI's own functional decomposition (dogfooding). Contains `functions.yaml` source and generated artefacts (SVG, CSV, etc.) checked into the repo.
+- `design/` — CLI's own functional decomposition (dogfooding). Contains `functions.yaml` source and generated artefacts (SVG, CSV, etc.) checked into the repo. Keep updated per Conventions.
 
 ## YAML Schema for Functional Decomposition
 
