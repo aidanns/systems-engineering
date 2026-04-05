@@ -15,27 +15,23 @@ for f in "$REPO_ROOT"/functional_decomposition/*.yaml "$REPO_ROOT"/functional_de
     "$PYTHON" -c "import yaml; yaml.safe_load(open('$f'))" && echo "  OK: $f" || { echo "  FAIL: $f"; exit 1; }
 done
 
-echo "Checking d2 generation (no rendering)..."
+echo "Checking file generation..."
 TMPDIR="$(mktemp -d)"
 trap 'rm -rf "$TMPDIR"' EXIT
 for f in "$REPO_ROOT"/functional_decomposition/*.yaml "$REPO_ROOT"/functional_decomposition/*.yml; do
     [ -f "$f" ] || continue
-    # Run generate.py but expect it to fail at d2 rendering if d2 is not installed.
-    # We just check that the .d2 file is created.
+    # Run generate.py — rendering may fail if d2 is not installed, but we still
+    # check whichever output files were created.
     "$PYTHON" "$REPO_ROOT/generate.py" function "$f" -o "$TMPDIR" 2>/dev/null || true
     stem="$(basename "${f%.*}")"
-    if [ -f "$TMPDIR/$stem.d2" ]; then
-        echo "  OK: $f -> $stem.d2"
-    else
-        echo "  FAIL: $f (no .d2 output)" >&2
-        exit 1
-    fi
-    if [ -f "$TMPDIR/$stem.csv" ]; then
-        echo "  OK: $f -> $stem.csv"
-    else
-        echo "  FAIL: $f (no .csv output)" >&2
-        exit 1
-    fi
+    for ext in d2 svg png md csv; do
+        if [ -f "$TMPDIR/$stem.$ext" ]; then
+            echo "  OK: $f -> $stem.$ext"
+        else
+            echo "  FAIL: $f (no .$ext output)" >&2
+            exit 1
+        fi
+    done
 done
 
 echo "All tests passed."
