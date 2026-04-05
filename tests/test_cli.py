@@ -226,7 +226,7 @@ class TestCsvOutput:
 class TestSvgOutput:
     @pytest.fixture(autouse=True)
     def setup(self, generated_output):
-        self.svg_path = generated_output / "functional_decomposition.svg"
+        self.svg_path = generated_output / "functional_decomposition_functions.svg"
         self.tree = ET.parse(self.svg_path)
 
     def test_valid_xml(self):
@@ -257,7 +257,7 @@ class TestSvgOutput:
 class TestPngOutput:
     @pytest.fixture(autouse=True)
     def setup(self, generated_output):
-        self.png_path = generated_output / "functional_decomposition.png"
+        self.png_path = generated_output / "functional_decomposition_functions.png"
 
     def test_png_magic_bytes(self):
         with open(self.png_path, "rb") as f:
@@ -280,9 +280,9 @@ class TestProductDiagramCLI:
             capture_output=True, text=True,
         )
         assert result.returncode == 0
-        assert (tmp_path / "example_products.d2").exists()
-        assert (tmp_path / "example_products.md").exists()
-        assert (tmp_path / "example_products.csv").exists()
+        assert (tmp_path / "product_breakdown_products.d2").exists()
+        assert (tmp_path / "product_breakdown_products.md").exists()
+        assert (tmp_path / "product_breakdown_products.csv").exists()
 
     def test_product_diagram_nonexistent_input(self, tmp_path):
         cli_path = Path(sys.executable).parent / "systems-engineering"
@@ -295,14 +295,14 @@ class TestProductDiagramCLI:
 
     def test_product_diagram_directory_input(self, tmp_path):
         cli_path = Path(sys.executable).parent / "systems-engineering"
-        pb_dir = REPO_ROOT / "product_breakdown"
+        pb_dir = REPO_ROOT / "example"
         result = subprocess.run(
             [str(cli_path), "product", "diagram",
              str(pb_dir), "-o", str(tmp_path)],
             capture_output=True, text=True,
         )
         assert result.returncode == 0
-        assert (tmp_path / "example_products.d2").exists()
+        assert (tmp_path / "product_breakdown_products.d2").exists()
 
 
 # --- Golden file tests ---
@@ -315,29 +315,29 @@ class TestGoldenFiles:
 
     def test_d2_matches_golden(self):
         generated = yaml_to_d2(self.data)
-        golden = (GOLDEN_DIR / "functional_decomposition.d2").read_text()
+        golden = (GOLDEN_DIR / "functional_decomposition_functions.d2").read_text()
         assert generated == golden, "D2 output does not match golden file"
 
     def test_markdown_matches_golden(self):
         generated = yaml_to_markdown(self.data)
-        golden = (GOLDEN_DIR / "functional_decomposition.md").read_text()
+        golden = (GOLDEN_DIR / "functional_decomposition_functions.md").read_text()
         assert generated == golden, "Markdown output does not match golden file"
 
     def test_csv_matches_golden(self):
         generated = yaml_to_csv(self.data)
-        golden = (GOLDEN_DIR / "functional_decomposition.csv").open(newline="").read()
+        golden = (GOLDEN_DIR / "functional_decomposition_functions.csv").open(newline="").read()
         assert generated == golden, "CSV output does not match golden file"
 
     @pytest.mark.skipif(not HAS_D2, reason="d2 not installed")
     def test_svg_matches_golden(self, generated_output):
-        generated = (generated_output / "functional_decomposition.svg").read_bytes()
-        golden = (GOLDEN_DIR / "functional_decomposition.svg").read_bytes()
+        generated = (generated_output / "functional_decomposition_functions.svg").read_bytes()
+        golden = (GOLDEN_DIR / "functional_decomposition_functions.svg").read_bytes()
         assert generated == golden, "SVG output does not match golden file"
 
     @pytest.mark.skipif(not HAS_D2, reason="d2 not installed")
     def test_png_matches_golden(self, generated_output):
-        generated = (generated_output / "functional_decomposition.png").read_bytes()
-        golden = (GOLDEN_DIR / "functional_decomposition.png").read_bytes()
+        generated = (generated_output / "functional_decomposition_functions.png").read_bytes()
+        golden = (GOLDEN_DIR / "functional_decomposition_functions.png").read_bytes()
         assert generated == golden, "PNG output does not match golden file"
 
 
@@ -351,29 +351,29 @@ class TestProductGoldenFiles:
 
     def test_d2_matches_golden(self):
         generated = product_yaml_to_d2(self.data)
-        golden = (GOLDEN_DIR / "example_products.d2").read_text()
+        golden = (GOLDEN_DIR / "product_breakdown_products.d2").read_text()
         assert generated == golden, "Product D2 output does not match golden file"
 
     def test_markdown_matches_golden(self):
         generated = product_yaml_to_markdown(self.data)
-        golden = (GOLDEN_DIR / "example_products.md").read_text()
+        golden = (GOLDEN_DIR / "product_breakdown_products.md").read_text()
         assert generated == golden, "Product markdown output does not match golden file"
 
     def test_csv_matches_golden(self):
         generated = product_yaml_to_csv(self.data)
-        golden = (GOLDEN_DIR / "example_products.csv").open(newline="").read()
+        golden = (GOLDEN_DIR / "product_breakdown_products.csv").open(newline="").read()
         assert generated == golden, "Product CSV output does not match golden file"
 
     @pytest.mark.skipif(not HAS_D2, reason="d2 not installed")
     def test_svg_matches_golden(self, generated_product_output):
-        generated = (generated_product_output / "example_products.svg").read_bytes()
-        golden = (GOLDEN_DIR / "example_products.svg").read_bytes()
+        generated = (generated_product_output / "product_breakdown_products.svg").read_bytes()
+        golden = (GOLDEN_DIR / "product_breakdown_products.svg").read_bytes()
         assert generated == golden, "Product SVG output does not match golden file"
 
     @pytest.mark.skipif(not HAS_D2, reason="d2 not installed")
     def test_png_matches_golden(self, generated_product_output):
-        generated = (generated_product_output / "example_products.png").read_bytes()
-        golden = (GOLDEN_DIR / "example_products.png").read_bytes()
+        generated = (generated_product_output / "product_breakdown_products.png").read_bytes()
+        golden = (GOLDEN_DIR / "product_breakdown_products.png").read_bytes()
         assert generated == golden, "Product PNG output does not match golden file"
 
 
@@ -691,7 +691,7 @@ class TestDirectoryDefaults:
             include_descendants=False,
         )
         run_function_command(args)
-        assert (output_dir / "functional_decomposition.d2").exists()
+        assert (output_dir / "functional_decomposition_functions.d2").exists()
 
     def test_product_verify_directory_resolves_default_files(self, tmp_path, capsys):
         """When given directories, product verify should resolve default filenames."""
@@ -926,21 +926,21 @@ def generated_product_output(tmp_path_factory):
 
 class TestProcessProductFile:
     def test_d2_file_exists(self, generated_product_output):
-        assert (generated_product_output / "example_products.d2").exists()
+        assert (generated_product_output / "product_breakdown_products.d2").exists()
 
     def test_md_file_exists(self, generated_product_output):
-        assert (generated_product_output / "example_products.md").exists()
+        assert (generated_product_output / "product_breakdown_products.md").exists()
 
     def test_csv_file_exists(self, generated_product_output):
-        assert (generated_product_output / "example_products.csv").exists()
+        assert (generated_product_output / "product_breakdown_products.csv").exists()
 
     @pytest.mark.skipif(not HAS_D2, reason="d2 not installed")
     def test_svg_file_exists(self, generated_product_output):
-        assert (generated_product_output / "example_products.svg").exists()
+        assert (generated_product_output / "product_breakdown_products.svg").exists()
 
     @pytest.mark.skipif(not HAS_D2, reason="d2 not installed")
     def test_png_file_exists(self, generated_product_output):
-        assert (generated_product_output / "example_products.png").exists()
+        assert (generated_product_output / "product_breakdown_products.png").exists()
 
 
 # --- Product SVG tests (require d2) ---
@@ -950,7 +950,7 @@ class TestProcessProductFile:
 class TestProductSvgOutput:
     @pytest.fixture(autouse=True)
     def setup(self, generated_product_output):
-        self.svg_path = generated_product_output / "example_products.svg"
+        self.svg_path = generated_product_output / "product_breakdown_products.svg"
         self.tree = ET.parse(self.svg_path)
 
     def test_valid_xml(self):
@@ -988,7 +988,7 @@ class TestProductSvgOutput:
 class TestProductPngOutput:
     @pytest.fixture(autouse=True)
     def setup(self, generated_product_output):
-        self.png_path = generated_product_output / "example_products.png"
+        self.png_path = generated_product_output / "product_breakdown_products.png"
 
     def test_png_magic_bytes(self):
         with open(self.png_path, "rb") as f:

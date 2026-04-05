@@ -31,7 +31,7 @@ f="$REPO_ROOT/example/functional_decomposition.yaml"
 "$SYSTEMS_ENGINEERING" function "$f" -o "$TMPDIR" 2>/dev/null || true
 stem="$(basename "${f%.*}")"
 for ext in d2 svg png md csv; do
-    output_file="${stem}.$ext"
+    output_file="${stem}_functions.$ext"
     if [ -f "$TMPDIR/$output_file" ]; then
         echo "  OK: $f -> $output_file"
     else
@@ -40,7 +40,7 @@ for ext in d2 svg png md csv; do
     fi
 done
 # Check that CSV row count matches the number of functions in the YAML (+1 for root).
-csv_file="${stem}.csv"
+csv_file="${stem}_functions.csv"
 csv_rows=$(( $(wc -l < "$TMPDIR/$csv_file") - 1 ))  # subtract header
 yaml_functions=$(yq '[.functions // [] | .. | select(has("name")) | .name] | length' "$f")
 expected_rows=$(( yaml_functions + 1 ))  # +1 for root node row
@@ -52,30 +52,28 @@ else
 fi
 
 echo "Checking product diagram file generation..."
-for f in "$REPO_ROOT"/product_breakdown/*.yaml "$REPO_ROOT"/product_breakdown/*.yml; do
-    [ -f "$f" ] || continue
-    "$SYSTEMS_ENGINEERING" product diagram "$f" -o "$TMPDIR" 2>/dev/null || true
-    stem="$(basename "${f%.*}")"
-    for ext in d2 svg png md csv; do
-        output_file="${stem}_products.$ext"
-        if [ -f "$TMPDIR/$output_file" ]; then
-            echo "  OK: $f -> $output_file"
-        else
-            echo "  FAIL: $f (no $output_file output)" >&2
-            exit 1
-        fi
-    done
-    # Check that CSV row count matches components + CIs + root.
-    csv_file="${stem}_products.csv"
-    csv_rows=$(( $(wc -l < "$TMPDIR/$csv_file") - 1 ))  # subtract header
-    yaml_components=$(yq '[.. | select(has("name")) | .name] | length' "$f")
-    if [ "$csv_rows" -eq "$yaml_components" ]; then
-        echo "  OK: $f -> $csv_file has $csv_rows data rows matching $yaml_components nodes"
+f="$REPO_ROOT/example/product_breakdown.yaml"
+"$SYSTEMS_ENGINEERING" product diagram "$f" -o "$TMPDIR" 2>/dev/null || true
+stem="$(basename "${f%.*}")"
+for ext in d2 svg png md csv; do
+    output_file="${stem}_products.$ext"
+    if [ -f "$TMPDIR/$output_file" ]; then
+        echo "  OK: $f -> $output_file"
     else
-        echo "  FAIL: $f -> $csv_file has $csv_rows data rows but expected $yaml_components nodes" >&2
+        echo "  FAIL: $f (no $output_file output)" >&2
         exit 1
     fi
 done
+# Check that CSV row count matches components + CIs + root.
+csv_file="${stem}_products.csv"
+csv_rows=$(( $(wc -l < "$TMPDIR/$csv_file") - 1 ))  # subtract header
+yaml_components=$(yq '[.. | select(has("name")) | .name] | length' "$f")
+if [ "$csv_rows" -eq "$yaml_components" ]; then
+    echo "  OK: $f -> $csv_file has $csv_rows data rows matching $yaml_components nodes"
+else
+    echo "  FAIL: $f -> $csv_file has $csv_rows data rows but expected $yaml_components nodes" >&2
+    exit 1
+fi
 
 echo "Running pytest..."
 "$REPO_ROOT/.venv/bin/pytest" "$REPO_ROOT/tests/" -v

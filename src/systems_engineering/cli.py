@@ -451,7 +451,8 @@ def run_product_verify_command(args):
         sys.exit(1)
 
 
-def _dispatch_yaml_files(input_path: Path, output_dir: Path, process_fn):
+def _dispatch_yaml_files(input_path: Path, output_dir: Path, process_fn,
+                         default_stem: str):
     """Validate input, create output dir, and dispatch YAML files to process_fn."""
     if not input_path.exists():
         print(f"Error: {input_path} does not exist.", file=sys.stderr)
@@ -462,9 +463,9 @@ def _dispatch_yaml_files(input_path: Path, output_dir: Path, process_fn):
     if input_path.is_file():
         process_fn(input_path, output_dir)
     elif input_path.is_dir():
-        default_file = resolve_directory_to_file(input_path, "functional_decomposition")
+        default_file = resolve_directory_to_file(input_path, default_stem)
         if not default_file.exists():
-            print(f"Error: no functional_decomposition.yaml found in {input_path}.", file=sys.stderr)
+            print(f"Error: no {default_stem}.yaml found in {input_path}.", file=sys.stderr)
             sys.exit(1)
         process_fn(default_file, output_dir)
     else:
@@ -474,7 +475,8 @@ def _dispatch_yaml_files(input_path: Path, output_dir: Path, process_fn):
 
 def run_product_diagram_command(args):
     """Handle the 'product diagram' subcommand."""
-    _dispatch_yaml_files(args.input, args.output, process_product_file)
+    _dispatch_yaml_files(args.input, args.output, process_product_file,
+                         "product_breakdown")
 
 
 def run_function_command(args):
@@ -486,7 +488,8 @@ def run_function_command(args):
     def process_fn(yaml_path, output_dir):
         process_file(yaml_path, output_dir, root, filters, include_descendants)
 
-    _dispatch_yaml_files(args.input, args.output, process_fn)
+    _dispatch_yaml_files(args.input, args.output, process_fn,
+                         "functional_decomposition")
 
 
 def main():
