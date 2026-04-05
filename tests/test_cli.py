@@ -262,6 +262,18 @@ class TestGoldenFiles:
         golden = (GOLDEN_DIR / "example_functions.csv").open(newline="").read()
         assert generated == golden, "CSV output does not match golden file"
 
+    @pytest.mark.skipif(not HAS_D2, reason="d2 not installed")
+    def test_svg_matches_golden(self, generated_output):
+        generated = (generated_output / "example_functions.svg").read_bytes()
+        golden = (GOLDEN_DIR / "example_functions.svg").read_bytes()
+        assert generated == golden, "SVG output does not match golden file"
+
+    @pytest.mark.skipif(not HAS_D2, reason="d2 not installed")
+    def test_png_matches_golden(self, generated_output):
+        generated = (generated_output / "example_functions.png").read_bytes()
+        golden = (GOLDEN_DIR / "example_functions.png").read_bytes()
+        assert generated == golden, "PNG output does not match golden file"
+
 
 # --- find_subtree tests ---
 
