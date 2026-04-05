@@ -675,6 +675,7 @@ class TestProductD2Output:
 
     def test_ci_container_grid_config(self):
         in_container = False
+        container_count = 0
         for line in self.lines:
             if '_container: ""' in line:
                 in_container = True
@@ -683,10 +684,12 @@ class TestProductD2Output:
                 container_lines.append(line.strip())
                 if line.strip() == "}":
                     in_container = False
+                    container_count += 1
                     assert "grid-columns: 1" in container_lines
                     assert "grid-gap: 5" in container_lines
                     assert "stroke-width: 0" in container_lines
                     assert "fill: transparent" in container_lines
+        assert container_count == 3
 
     def test_node_count(self):
         # 3 components + 8 CIs = 11 nodes with p prefix

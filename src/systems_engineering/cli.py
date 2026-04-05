@@ -83,7 +83,7 @@ def is_leaf(function: dict) -> bool:
 
 
 def emit_node(lines: list[str], node_id: str, function: dict, indent: str = ""):
-    """Emit d2 lines for a single function node."""
+    """Emit d2 lines for a single labeled node."""
     lines.append(f"{indent}{node_id}: {function['name']}")
     lines.append(f"{indent}{node_id}.width: 250")
     if function.get("recently_updated"):
