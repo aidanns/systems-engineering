@@ -34,15 +34,7 @@ for f in "$REPO_ROOT"/functional_decomposition/*.yaml "$REPO_ROOT"/functional_de
     done
     # Check that CSV row count matches the number of functions in the YAML.
     csv_rows=$(( $(wc -l < "$TMPDIR/$stem.csv") - 1 ))  # subtract header
-    yaml_functions=$("$PYTHON" -c "
-import yaml, sys
-def count(node):
-    total = 0
-    for f in node.get('functions', []):
-        total += 1 + count(f)
-    return total
-print(count(yaml.safe_load(open(sys.argv[1]))))
-" "$f")
+    yaml_functions=$(yq '[.functions // [] | .. | select(has("name")) | .name] | length' "$f")
     if [ "$csv_rows" -eq "$yaml_functions" ]; then
         echo "  OK: $f -> $stem.csv has $csv_rows data rows matching $yaml_functions functions"
     else
