@@ -68,11 +68,13 @@ if git rev-parse "$new_tag" >/dev/null 2>&1; then
     exit 1
 fi
 
-# Confirm with user
-read -r -p "Proceed with release $new_tag? [y/N] " confirm
-if [[ ! "$confirm" =~ ^[Yy]$ ]]; then
-    echo "Aborted."
-    exit 1
+# Confirm with user (skip with --yes flag)
+if [[ "${1:-}" != "--yes" ]]; then
+    read -r -p "Proceed with release $new_tag? [y/N] " confirm
+    if [[ ! "$confirm" =~ ^[Yy]$ ]]; then
+        echo "Aborted."
+        exit 1
+    fi
 fi
 
 # Run tests
