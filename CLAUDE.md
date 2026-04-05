@@ -44,7 +44,7 @@ scripts/generate.sh
 scripts/generate.sh /path/to/output
 
 # Generate diagrams from a single file (direct)
-systems-engineering function functional_decomposition/example.yaml -o output/
+.venv/bin/systems-engineering function functional_decomposition/example.yaml -o output/
 ```
 
 ## Dependencies

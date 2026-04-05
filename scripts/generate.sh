@@ -5,7 +5,7 @@ REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 SYSTEMS_ENGINEERING="$REPO_ROOT/.venv/bin/systems-engineering"
 
 if [ ! -f "$SYSTEMS_ENGINEERING" ]; then
-    echo "Error: Virtual environment not found. Run scripts/build.sh first." >&2
+    echo "Error: systems-engineering CLI not found in virtualenv. Run scripts/build.sh first." >&2
     exit 1
 fi
 
