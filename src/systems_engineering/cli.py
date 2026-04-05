@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
-"""Generate functional decomposition diagrams from YAML definitions.
+"""Systems engineering CLI: functional decomposition diagrams and product breakdown verification.
 
-Reads YAML files defining functional hierarchies, converts them to d2 diagram
-definitions, and renders them to SVG using the d2 tool.
+Reads YAML files defining functional hierarchies and product breakdowns,
+generates d2 diagrams, and verifies function-to-CI allocations.
 """
 
 import argparse
@@ -263,6 +263,62 @@ def process_file(yaml_path: Path, output_dir: Path, root: str | None = None,
     print(f"Written: {csv_path}")
 
 
+def collect_leaf_function_names(data: dict) -> set[str]:
+    """Collect names of all leaf functions (excluding root) from a functional decomposition tree."""
+    names: set[str] = set()
+    for child in data.get("functions", []):
+        if is_leaf(child):
+            names.add(child["name"])
+        else:
+            names |= collect_leaf_function_names(child)
+    return names
+
+
+def collect_allocated_functions(data: dict) -> set[str]:
+    """Collect all function names allocated to CIs in a product breakdown tree."""
+    allocated: set[str] = set()
+    for component in data.get("components", []):
+        allocated |= collect_allocated_functions(component)
+    for ci in data.get("configuration_items", []):
+        allocated |= set(ci.get("functions", []))
+    return allocated
+
+
+def run_product_verify_command(args):
+    """Handle the 'product verify' subcommand."""
+    fd_path: Path = args.functional_decomposition
+    pb_path: Path = args.product_breakdown
+
+    if not fd_path.exists():
+        print(f"Error: {fd_path} does not exist.", file=sys.stderr)
+        sys.exit(1)
+    if not pb_path.exists():
+        print(f"Error: {pb_path} does not exist.", file=sys.stderr)
+        sys.exit(1)
+
+    fd_data = load_yaml(fd_path)
+    pb_data = load_yaml(pb_path)
+
+    all_functions = collect_leaf_function_names(fd_data)
+    allocated = collect_allocated_functions(pb_data)
+
+    if not all_functions:
+        print("\u26a0\ufe0f No leaf functions found in functional decomposition.", file=sys.stderr)
+        sys.exit(1)
+
+    unknown = sorted(allocated - all_functions)
+    if unknown:
+        print(f"\u26a0\ufe0f Some allocated functions not found in functional decomposition: {', '.join(unknown)}", file=sys.stderr)
+
+    unallocated = sorted(all_functions - allocated)
+
+    if not unallocated:
+        print("\u2705 All functions allocated.")
+    else:
+        print(f"\u26a0\ufe0f Some functions unallocated: {', '.join(unallocated)}")
+        sys.exit(1)
+
+
 def run_function_command(args):
     """Handle the 'function' subcommand."""
     input_path: Path = args.input
@@ -334,6 +390,34 @@ def main():
         help="When filtering, include all descendants of matched functions.",
     )
     function_parser.set_defaults(func=run_function_command)
+
+    # 'product' subcommand
+    product_parser = subparsers.add_parser(
+        "product",
+        help="Product breakdown commands.",
+    )
+    product_subparsers = product_parser.add_subparsers(
+        dest="product_command", required=True
+    )
+
+    # 'product verify' subcommand
+    verify_parser = product_subparsers.add_parser(
+        "verify",
+        help="Verify all leaf functions are allocated to configuration items.",
+    )
+    verify_parser.add_argument(
+        "-p", "--product-breakdown",
+        type=Path,
+        required=True,
+        help="Product breakdown YAML file.",
+    )
+    verify_parser.add_argument(
+        "-f", "--functional-decomposition",
+        type=Path,
+        required=True,
+        help="Functional decomposition YAML file.",
+    )
+    verify_parser.set_defaults(func=run_product_verify_command)
 
     args = parser.parse_args()
     args.func(args)

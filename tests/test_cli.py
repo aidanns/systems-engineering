@@ -11,9 +11,12 @@ import pytest
 import yaml
 
 from systems_engineering.cli import (
+    collect_allocated_functions,
+    collect_leaf_function_names,
     filter_tree,
     find_subtree,
     load_yaml,
+    run_product_verify_command,
     yaml_to_csv,
     yaml_to_d2,
     yaml_to_markdown,
@@ -22,6 +25,7 @@ from systems_engineering.cli import (
 
 REPO_ROOT = Path(__file__).parent.parent
 EXAMPLE_YAML = REPO_ROOT / "functional_decomposition" / "example.yaml"
+PRODUCT_EXAMPLE_YAML = REPO_ROOT / "product_breakdown" / "example.yaml"
 GOLDEN_DIR = REPO_ROOT / "tests" / "golden"
 
 HAS_D2 = shutil.which("d2") is not None
@@ -400,3 +404,160 @@ class TestFilterTree:
         assert "Generate Power" in names
         assert "Store Power" in names
         assert "Distribute Power" in names
+
+
+# --- Product verify tests ---
+
+
+def _make_verify_args(fd_path, pb_path):
+    """Create a namespace mimicking argparse output for product verify."""
+    import argparse
+    return argparse.Namespace(
+        functional_decomposition=fd_path,
+        product_breakdown=pb_path,
+    )
+
+
+class TestProductVerify:
+    @pytest.fixture(autouse=True)
+    def setup(self, example_data):
+        self.fd_data = example_data
+        self.pb_data = load_yaml(PRODUCT_EXAMPLE_YAML)
+
+    def test_collect_leaf_function_names(self):
+        names = collect_leaf_function_names(self.fd_data)
+        expected = {
+            "Generate Power", "Store Power", "Distribute Power",
+            "Detect Temperature", "Cool Components",
+            "Collect Data", "Transform Data", "Store Data",
+        }
+        assert names == expected
+
+    def test_collect_allocated_functions(self):
+        allocated = collect_allocated_functions(self.pb_data)
+        expected = {
+            "Generate Power", "Store Power", "Distribute Power",
+            "Detect Temperature", "Cool Components",
+            "Collect Data", "Transform Data", "Store Data",
+        }
+        assert allocated == expected
+
+    def test_all_allocated(self, capsys):
+        """Example files should have all leaf functions allocated."""
+        args = _make_verify_args(EXAMPLE_YAML, PRODUCT_EXAMPLE_YAML)
+        run_product_verify_command(args)
+        captured = capsys.readouterr()
+        assert "\u2705 All functions allocated." in captured.out
+
+    def test_some_unallocated(self, capsys, tmp_path):
+        """A product breakdown missing allocations should warn with the missing function names."""
+        incomplete_pb = {
+            "name": "Incomplete System",
+            "components": [{
+                "name": "Partial",
+                "configuration_items": [{
+                    "name": "Only Power",
+                    "functions": ["Generate Power"],
+                }],
+            }],
+        }
+        pb_path = tmp_path / "incomplete.yaml"
+        pb_path.write_text(yaml.dump(incomplete_pb))
+
+        args = _make_verify_args(EXAMPLE_YAML, pb_path)
+        with pytest.raises(SystemExit) as exc_info:
+            run_product_verify_command(args)
+        assert exc_info.value.code == 1
+
+        captured = capsys.readouterr()
+        assert "\u26a0\ufe0f Some functions unallocated:" in captured.out
+        assert "Store Power" in captured.out
+        assert "Cool Components" in captured.out
+
+    def test_unallocated_are_sorted(self, capsys, tmp_path):
+        """Unallocated function names should be listed in alphabetical order."""
+        empty_pb = {"name": "Empty", "components": []}
+        pb_path = tmp_path / "empty.yaml"
+        pb_path.write_text(yaml.dump(empty_pb))
+
+        args = _make_verify_args(EXAMPLE_YAML, pb_path)
+        with pytest.raises(SystemExit):
+            run_product_verify_command(args)
+
+        captured = capsys.readouterr()
+        # Extract the list after the colon
+        msg = captured.out.strip()
+        names_str = msg.split(": ", 1)[1]
+        names = [n.strip() for n in names_str.split(",")]
+        assert names == sorted(names)
+
+    def test_extra_allocated_warns(self, capsys, tmp_path):
+        """CIs referencing functions not in the FD should warn but still pass."""
+        pb_with_extra = {
+            "name": "System",
+            "components": [{
+                "name": "Component",
+                "configuration_items": [{
+                    "name": "CI",
+                    "functions": [
+                        "Generate Power", "Store Power", "Distribute Power",
+                        "Detect Temperature", "Cool Components",
+                        "Collect Data", "Transform Data", "Store Data",
+                        "Nonexistent Function",
+                    ],
+                }],
+            }],
+        }
+        pb_path = tmp_path / "extra.yaml"
+        pb_path.write_text(yaml.dump(pb_with_extra))
+
+        args = _make_verify_args(EXAMPLE_YAML, pb_path)
+        run_product_verify_command(args)
+        captured = capsys.readouterr()
+        assert "\u2705 All functions allocated." in captured.out
+        assert "Nonexistent Function" in captured.err
+        assert "not found in functional decomposition" in captured.err
+
+    def test_nested_components(self):
+        """collect_allocated_functions should recurse through nested component hierarchies."""
+        nested_pb = {
+            "name": "System",
+            "components": [{
+                "name": "Top Level",
+                "components": [{
+                    "name": "Mid Level",
+                    "components": [{
+                        "name": "Leaf",
+                        "configuration_items": [{
+                            "name": "Deep CI",
+                            "functions": ["Deeply Nested Function"],
+                        }],
+                    }],
+                }],
+            }],
+        }
+        allocated = collect_allocated_functions(nested_pb)
+        assert allocated == {"Deeply Nested Function"}
+
+    def test_empty_fd_exits(self, tmp_path):
+        """An FD with no leaf functions should exit with an error, not vacuously pass."""
+        empty_fd = {"name": "Empty System"}
+        fd_path = tmp_path / "empty_fd.yaml"
+        fd_path.write_text(yaml.dump(empty_fd))
+
+        args = _make_verify_args(fd_path, PRODUCT_EXAMPLE_YAML)
+        with pytest.raises(SystemExit) as exc_info:
+            run_product_verify_command(args)
+        assert exc_info.value.code == 1
+
+    def test_nonexistent_fd_exits(self, tmp_path):
+        pb_path = tmp_path / "exists.yaml"
+        pb_path.write_text(yaml.dump({"name": "System"}))
+        args = _make_verify_args(tmp_path / "nonexistent.yaml", pb_path)
+        with pytest.raises(SystemExit):
+            run_product_verify_command(args)
+
+    def test_nonexistent_pb_exits(self, tmp_path):
+        args = _make_verify_args(EXAMPLE_YAML, tmp_path / "nonexistent.yaml")
+        with pytest.raises(SystemExit):
+            run_product_verify_command(args)

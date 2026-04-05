@@ -17,6 +17,17 @@ for f in "$REPO_ROOT"/functional_decomposition/*.yaml "$REPO_ROOT"/functional_de
     "$PYTHON" -c "import yaml; yaml.safe_load(open('$f'))" && echo "  OK: $f" || { echo "  FAIL: $f"; exit 1; }
 done
 
+echo "Checking product breakdown YAML files parse correctly..."
+for f in "$REPO_ROOT"/product_breakdown/*.yaml "$REPO_ROOT"/product_breakdown/*.yml; do
+    [ -f "$f" ] || continue
+    "$PYTHON" -c "import yaml; yaml.safe_load(open('$f'))" && echo "  OK: $f" || { echo "  FAIL: $f"; exit 1; }
+done
+
+echo "Checking product verify..."
+"$SYSTEMS_ENGINEERING" product verify \
+    -p "$REPO_ROOT/product_breakdown/example.yaml" \
+    -f "$REPO_ROOT/functional_decomposition/example.yaml"
+
 echo "Checking file generation..."
 TMPDIR="$(mktemp -d)"
 trap 'rm -rf "$TMPDIR"' EXIT
