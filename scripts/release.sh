@@ -3,6 +3,19 @@ set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 
+# Guard: must be on main branch
+current_branch=$(git branch --show-current)
+if [ "$current_branch" != "main" ]; then
+    echo "Error: releases must be created from the main branch (currently on '$current_branch')."
+    exit 1
+fi
+
+# Guard: working tree must be clean
+if [ -n "$(git status --porcelain)" ]; then
+    echo "Error: working tree is not clean. Commit or stash changes first."
+    exit 1
+fi
+
 # Determine the latest release tag
 latest_tag=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
 if [ -z "$latest_tag" ]; then
@@ -31,9 +44,9 @@ echo ""
 
 # Check for breaking changes (major) or features (minor)
 bump="patch"
-if echo "$commits" | grep -qiE '^\w+ \w+(\(.+\))?!:'; then
+if echo "$commits" | grep -qiE '^\w+ \w+(\([^)]+\))?!:'; then
     bump="major"
-elif echo "$commits" | grep -qiE '^\w+ feat(\(.+\))?:'; then
+elif echo "$commits" | grep -qiE '^\w+ feat(\([^)]+\))?:'; then
     bump="minor"
 fi
 
@@ -48,6 +61,12 @@ new_tag="v${new_version}"
 
 echo "Version bump: $bump ($latest_tag -> $new_tag)"
 echo ""
+
+# Guard: tag must not already exist
+if git rev-parse "$new_tag" >/dev/null 2>&1; then
+    echo "Error: tag $new_tag already exists."
+    exit 1
+fi
 
 # Confirm with user
 read -r -p "Proceed with release $new_tag? [y/N] " confirm
