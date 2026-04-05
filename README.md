@@ -70,3 +70,54 @@ systems-engineering function functional_decomposition/ -o output/
 ```
 
 This produces `.d2`, `.svg`, `.png`, `.md`, and `.csv` files in the output directory.
+
+## Releasing
+
+Releases are distributed via a private Homebrew tap (`aidanns/tools`).
+
+### Using the release script
+
+`scripts/release.sh` automates steps 1–4 below. It determines the version bump from conventional commit messages since the last tag:
+
+- **Breaking changes** (`feat!:`, `fix!:`, etc.) → major version bump
+- **Features** (`feat:`) → minor version bump
+- **All other changes** (`fix:`, `docs:`, `chore:`, etc.) → patch version bump
+
+```bash
+scripts/release.sh
+```
+
+The script runs tests, updates `pyproject.toml`, commits, tags, and pushes. After it completes, follow step 5 onwards to update the Homebrew formula.
+
+### Manual steps
+
+1. **Update the version** in `pyproject.toml`.
+
+2. **Run tests** to confirm the release is clean:
+   ```bash
+   scripts/build.sh && scripts/test.sh && scripts/generate.sh
+   ```
+
+3. **Commit the version bump**:
+   ```bash
+   git commit -am "chore: bump version to X.Y.Z"
+   ```
+
+4. **Create and push a git tag**:
+   ```bash
+   git tag vX.Y.Z
+   git push origin main --tags
+   ```
+
+5. **Update the Homebrew formula** at [github.com/aidanns/homebrew-tools](https://github.com/aidanns/homebrew-tools) (`Formula/systems-engineering.rb`):
+   - Change the `tag:` value to the new tag (e.g. `tag: "vX.Y.Z"`)
+   - If Python dependencies changed, update the `resource` blocks (URLs and SHA256 hashes)
+   - If fixing the formula without a new tag, increment the `revision` field instead
+
+6. **Commit and push the formula update**.
+
+7. **Test the update**:
+   ```bash
+   brew upgrade systems-engineering
+   systems-engineering --help
+   ```
