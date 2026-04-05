@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "systems-engineering-diagrams"
 version = "0.1.0"
-description = "Generate systems engineering diagrams from YAML definitions, rendered via d2."
+description = "Generate systems engineering artefacts such as diagrams and tables from YAML definitions."
 readme = "README.md"
 requires-python = ">=3.10"
 authors = [

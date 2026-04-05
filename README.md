@@ -29,6 +29,7 @@ Requires a `HOMEBREW_GITHUB_API_TOKEN` environment variable with a GitHub person
 
 - Python 3.10+
 - [d2](https://d2lang.com/) installed and available on PATH
+- [yq](https://github.com/mikefarah/yq) installed and available on PATH (required for tests)
 
 ```bash
 scripts/build.sh
@@ -68,4 +69,4 @@ systems-engineering function functional_decomposition/example.yaml -o output/
 systems-engineering function functional_decomposition/ -o output/
 ```
 
-This produces `.d2`, `.svg`, `.png`, and `.md` files in the output directory.
+This produces `.d2`, `.svg`, `.png`, `.md`, and `.csv` files in the output directory.
