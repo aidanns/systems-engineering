@@ -11,7 +11,10 @@ CLI tools for generating systems engineering diagrams from YAML definitions, ren
 - `functional_decomposition/` — YAML files defining functional decomposition hierarchies.
 - `output/` — Generated `.d2`, `.svg`, `.png`, and `.md` files (gitignored).
 - `scripts/build.sh` — Creates virtualenv and installs the package in editable mode.
-- `scripts/test.sh` — Validates YAML files and d2 generation.
+- `scripts/test.sh` — Validates YAML files, output file generation, and runs pytest semantic checks.
+- `tests/test_cli.py` — Pytest suite with structural and golden file tests for all output types.
+- `tests/golden/` — Golden files for expected output. Used for exact-match comparison in tests.
+- `scripts/regenerate_golden.sh` — Regenerates golden files in `tests/golden/` from current CLI output.
 - `scripts/generate.sh` — Generates all diagrams from `functional_decomposition/` to `output/`.
 
 ## YAML Schema for Functional Decomposition
@@ -57,3 +60,4 @@ scripts/generate.sh /path/to/output
 
 - Use [conventional commits](https://www.conventionalcommits.org/) for all git commits (e.g. `feat:`, `fix:`, `docs:`, `chore:`).
 - Before finishing work, confirm that `scripts/build.sh`, `scripts/test.sh`, and `scripts/generate.sh` all run successfully.
+- When adding new output types or changing output format, regenerate and commit updated golden files in `tests/golden/` so changes are reviewable during PR review.

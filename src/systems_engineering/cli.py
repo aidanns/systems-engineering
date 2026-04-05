@@ -8,6 +8,7 @@ definitions, and renders them to SVG using the d2 tool.
 import argparse
 import csv
 import io
+import re
 import subprocess
 import sys
 from pathlib import Path
@@ -18,6 +19,61 @@ import yaml
 def load_yaml(path: Path) -> dict:
     with open(path) as f:
         return yaml.safe_load(f)
+
+
+def find_subtree(data: dict, root_name: str) -> dict | None:
+    """Find and return the subtree rooted at the node with the given name."""
+    if data["name"] == root_name:
+        return data
+    for child in data.get("functions", []):
+        result = find_subtree(child, root_name)
+        if result is not None:
+            return result
+    return None
+
+
+def filter_tree(data: dict, filters: list[str], include_descendants: bool) -> dict:
+    """Return a pruned copy of the tree containing only matching functions and their ancestors.
+
+    A function matches if any filter regex matches its name via re.search().
+    The root node is always included. Intermediary nodes on the path from root
+    to a matched node are included to keep the tree connected.
+    If include_descendants is True, all descendants of matched nodes are also included.
+    """
+    compiled = [re.compile(f, re.IGNORECASE) for f in filters]
+
+    def matches(name: str) -> bool:
+        return any(p.search(name) for p in compiled)
+
+    def prune(node: dict) -> dict | None:
+        """Return a pruned copy of node, or None if it should be excluded."""
+        node_matched = matches(node["name"])
+        children = node.get("functions", [])
+
+        if node_matched and include_descendants:
+            # Include this node and all descendants unchanged
+            return dict(node)
+
+        pruned_children = []
+        for child in children:
+            pruned = prune(child)
+            if pruned is not None:
+                pruned_children.append(pruned)
+
+        if node_matched or pruned_children:
+            result = {k: v for k, v in node.items() if k != "functions"}
+            if pruned_children:
+                result["functions"] = pruned_children
+            return result
+
+        return None
+
+    # Root is always included, so start pruning from children
+    result = prune(data)
+    if result is None:
+        # No matches found — return root only
+        return {k: v for k, v in data.items() if k != "functions"}
+    return result
 
 
 def is_leaf(function: dict) -> bool:
@@ -33,6 +89,24 @@ def emit_node(lines: list[str], node_id: str, function: dict, indent: str = ""):
         lines.append(f"{indent}{node_id}.style.stroke: red")
 
 
+def emit_leaf_container(lines: list[str], parent_id: str, children: list[dict], counter: list[int]):
+    """Emit a grid container holding leaf children, connected to the parent node."""
+    container_id = f"{parent_id}_container"
+    lines.append(f"{container_id}: \"\" {{")
+    lines.append(f"  grid-columns: 1")
+    lines.append(f"  grid-gap: 5")
+    lines.append(f"  style: {{")
+    lines.append(f"    stroke-width: 0")
+    lines.append(f"    fill: transparent")
+    lines.append(f"  }}")
+    for child in children:
+        child_id = f"f{counter[0]}"
+        counter[0] += 1
+        emit_node(lines, child_id, child, indent="  ")
+    lines.append(f"}}")
+    lines.append(f"{parent_id} -> {container_id}")
+
+
 def function_to_d2(function: dict, parent_id: str, lines: list[str], counter: list[int]):
     """Recursively convert a function node and its children to d2 lines."""
     node_id = f"f{counter[0]}"
@@ -43,21 +117,7 @@ def function_to_d2(function: dict, parent_id: str, lines: list[str], counter: li
     lines.append(f"{parent_id} -> {node_id}")
 
     if children and all(is_leaf(c) for c in children):
-        # All children are leaves — render them in a separate grid container.
-        container_id = f"{node_id}_container"
-        lines.append(f"{container_id}: \"\" {{")
-        lines.append(f"  grid-columns: 1")
-        lines.append(f"  grid-gap: 5")
-        lines.append(f"  style: {{")
-        lines.append(f"    stroke-width: 0")
-        lines.append(f"    fill: transparent")
-        lines.append(f"  }}")
-        for child in children:
-            child_id = f"f{counter[0]}"
-            counter[0] += 1
-            emit_node(lines, child_id, child, indent="  ")
-        lines.append(f"}}")
-        lines.append(f"{node_id} -> {container_id}")
+        emit_leaf_container(lines, node_id, children, counter)
     else:
         for child in children:
             function_to_d2(child, node_id, lines, counter)
@@ -86,10 +146,15 @@ def yaml_to_d2(data: dict) -> str:
     emit_node(lines, root_id, data)
     lines.append("")
 
+    children = data.get("functions", [])
     counter = [0]
-    for function in data.get("functions", []):
-        function_to_d2(function, root_id, lines, counter)
+    if children and all(is_leaf(c) for c in children):
+        emit_leaf_container(lines, root_id, children, counter)
         lines.append("")
+    else:
+        for function in children:
+            function_to_d2(function, root_id, lines, counter)
+            lines.append("")
 
     return "\n".join(lines)
 
@@ -103,15 +168,22 @@ def collect_functions(function: dict, parent_name: str, rows: list[tuple[str, st
         collect_functions(child, name, rows)
 
 
-def yaml_to_markdown(data: dict) -> str:
-    """Convert a functional decomposition YAML structure to a markdown table."""
+def collect_all_rows(data: dict) -> list[tuple[str, str, str]]:
+    """Collect all rows for tabular output, including the root node."""
     rows: list[tuple[str, str, str]] = []
     root_name = data["name"]
+    rows.append(("", root_name, data.get("description", "")))
     for function in data.get("functions", []):
         collect_functions(function, root_name, rows)
+    return rows
+
+
+def yaml_to_markdown(data: dict) -> str:
+    """Convert a functional decomposition YAML structure to a markdown table."""
+    rows = collect_all_rows(data)
 
     lines = [
-        f"# {root_name}",
+        f"# {data['name']}",
         "",
         "| Parent | Function | Description |",
         "|--------|----------|-------------|",
@@ -124,11 +196,7 @@ def yaml_to_markdown(data: dict) -> str:
 
 def yaml_to_csv(data: dict) -> str:
     """Convert a functional decomposition YAML structure to a CSV table."""
-    rows: list[tuple[str, str, str]] = []
-    root_name = data["name"]
-    for function in data.get("functions", []):
-        collect_functions(function, root_name, rows)
-
+    rows = collect_all_rows(data)
     output = io.StringIO()
     writer = csv.writer(output)
     writer.writerow(["Parent", "Function", "Description"])
@@ -154,9 +222,20 @@ def render_d2(d2_path: Path, output_path: Path):
         sys.exit(1)
 
 
-def process_file(yaml_path: Path, output_dir: Path):
+def process_file(yaml_path: Path, output_dir: Path, root: str | None = None,
+                  filters: list[str] | None = None, include_descendants: bool = False):
     """Process a single YAML file: generate .d2, .svg, .png, .md, and .csv."""
     data = load_yaml(yaml_path)
+
+    if root is not None:
+        subtree = find_subtree(data, root)
+        if subtree is None:
+            print(f"Error: root function '{root}' not found in {yaml_path}.", file=sys.stderr)
+            sys.exit(1)
+        data = subtree
+
+    if filters:
+        data = filter_tree(data, filters, include_descendants)
 
     stem = yaml_path.stem
     d2_path = output_dir / f"{stem}_functions.d2"
@@ -195,15 +274,19 @@ def run_function_command(args):
 
     output_dir.mkdir(parents=True, exist_ok=True)
 
+    root = args.root
+    filters = args.filter
+    include_descendants = args.include_descendants
+
     if input_path.is_file():
-        process_file(input_path, output_dir)
+        process_file(input_path, output_dir, root, filters, include_descendants)
     elif input_path.is_dir():
         yaml_files = sorted(input_path.glob("*.yaml")) + sorted(input_path.glob("*.yml"))
         if not yaml_files:
             print(f"No YAML files found in {input_path}.", file=sys.stderr)
             sys.exit(1)
         for yaml_file in yaml_files:
-            process_file(yaml_file, output_dir)
+            process_file(yaml_file, output_dir, root, filters, include_descendants)
     else:
         print(f"Error: {input_path} is not a file or directory.", file=sys.stderr)
         sys.exit(1)
@@ -230,6 +313,25 @@ def main():
         type=Path,
         default=Path("output"),
         help="Output directory for .d2 and .svg files (default: output/).",
+    )
+    function_parser.add_argument(
+        "--root",
+        type=str,
+        default=None,
+        help="Name of the function to use as the root of the output tree.",
+    )
+    function_parser.add_argument(
+        "--filter",
+        action="append",
+        default=None,
+        help="Regex pattern to filter functions by name (repeatable). "
+             "Matches as substring by default; use anchors for exact match.",
+    )
+    function_parser.add_argument(
+        "--include-descendants",
+        action="store_true",
+        default=False,
+        help="When filtering, include all descendants of matched functions.",
     )
     function_parser.set_defaults(func=run_function_command)
 

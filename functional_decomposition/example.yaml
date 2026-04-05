@@ -1,4 +1,5 @@
 name: Example System
+description: An example system demonstrating functional decomposition.
 functions:
   - name: Power Management
     description: Manage the generation, storage, and distribution of power.
