@@ -79,29 +79,35 @@ Releases are distributed via a private Homebrew tap (`aidanns/tools`).
 
 1. **Update the version** in `pyproject.toml`.
 
-2. **Commit the version bump**:
+2. **Run tests** to confirm the release is clean:
+   ```bash
+   scripts/build.sh && scripts/test.sh && scripts/generate.sh
+   ```
+
+3. **Commit the version bump**:
    ```bash
    git commit -am "chore: bump version to X.Y.Z"
    ```
 
-3. **Create and push a git tag**:
+4. **Create and push a git tag**:
    ```bash
    git tag vX.Y.Z
    git push origin main --tags
    ```
 
-4. **Update the Homebrew formula** in `~/Projects/homebrew-tools/Formula/systems-engineering.rb`:
+5. **Update the Homebrew formula** in `~/Projects/homebrew-tools/Formula/systems-engineering.rb`:
    - Change the `tag:` value to the new tag (e.g. `tag: "vX.Y.Z"`)
    - If Python dependencies changed, update the `resource` blocks (URLs and SHA256 hashes)
+   - If fixing the formula without a new tag, increment the `revision` field instead
 
-5. **Commit and push the formula update**:
+6. **Commit and push the formula update**:
    ```bash
    cd ~/Projects/homebrew-tools
    git commit -am "systems-engineering: update to vX.Y.Z"
    git push
    ```
 
-6. **Test the update**:
+7. **Test the update**:
    ```bash
    brew upgrade systems-engineering
    systems-engineering --help
