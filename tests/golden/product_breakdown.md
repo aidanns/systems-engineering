@@ -1,0 +1,16 @@
+# Example System
+
+| Parent | Name | Type | Description | Functions |
+|--------|------|------|-------------|-----------|
+|  | Example System | System | An example product breakdown for the Example System. |  |
+| Example System | Power Subsystem | Component | Hardware for power generation, storage, and distribution. |  |
+| Power Subsystem | Solar Panel Assembly | Configuration Item | Photovoltaic panels and mounting hardware. | Generate Power |
+| Power Subsystem | Battery Pack | Configuration Item | Lithium-ion battery modules. | Store Power |
+| Power Subsystem | Power Distribution Unit | Configuration Item | Switching and routing hardware for power delivery. | Distribute Power |
+| Example System | Thermal Subsystem | Component | Hardware for temperature monitoring and cooling. |  |
+| Thermal Subsystem | Temperature Sensor Array | Configuration Item | Thermocouple and RTD sensor network. | Detect Temperature |
+| Thermal Subsystem | Cooling System | Configuration Item | Active cooling fans and heat exchangers. | Cool Components |
+| Example System | Data Subsystem | Component | Hardware for data acquisition, processing, and storage. |  |
+| Data Subsystem | Data Acquisition Module | Configuration Item | ADC and signal conditioning hardware. | Collect Data |
+| Data Subsystem | Processing Unit | Configuration Item | Embedded compute module for data transformation. | Transform Data |
+| Data Subsystem | Storage Module | Configuration Item | Non-volatile storage for processed data. | Store Data |

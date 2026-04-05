@@ -20,12 +20,17 @@ from systems_engineering.cli import (
     filter_tree,
     find_subtree,
     load_yaml,
+    process_file,
+    process_product_file,
+    product_collect_all_rows,
+    product_yaml_to_csv,
+    product_yaml_to_d2,
+    product_yaml_to_markdown,
     run_function_command,
     run_product_verify_command,
     yaml_to_csv,
-    yaml_to_d2,
+    functional_yaml_to_d2,
     yaml_to_markdown,
-    process_file,
 )
 
 REPO_ROOT = Path(__file__).parent.parent
@@ -70,7 +75,7 @@ class TestD2Output:
     @pytest.fixture(autouse=True)
     def setup(self, example_data):
         self.data = example_data
-        self.d2 = yaml_to_d2(example_data)
+        self.d2 = functional_yaml_to_d2(example_data)
         self.lines = self.d2.splitlines()
 
     def test_config_block_present(self):
@@ -124,6 +129,7 @@ class TestD2Output:
                 if line.strip() == "}":
                     in_container = False
                     assert "grid-columns: 1" in container_lines
+                    assert any("grid-rows:" in l for l in container_lines)
                     assert "grid-gap: 5" in container_lines
                     assert "stroke-width: 0" in container_lines
                     assert "fill: transparent" in container_lines
@@ -137,9 +143,10 @@ class TestD2Output:
         render in a grid container — not as individual nodes with separate arrows.
         """
         subtree = find_subtree(example_data, "Power Management")
-        d2 = yaml_to_d2(subtree)
+        d2 = functional_yaml_to_d2(subtree)
         assert "root_container" in d2
         assert "grid-columns: 1" in d2
+        assert "grid-rows: 3" in d2
         assert "grid-gap: 5" in d2
         assert "Generate Power" in d2
         assert "Store Power" in d2
@@ -261,6 +268,43 @@ class TestPngOutput:
         assert self.png_path.stat().st_size > 1024
 
 
+# --- Product diagram CLI tests ---
+
+
+class TestProductDiagramCLI:
+    def test_product_diagram_subcommand(self, tmp_path):
+        cli_path = Path(sys.executable).parent / "systems-engineering"
+        result = subprocess.run(
+            [str(cli_path), "product", "diagram",
+             str(PRODUCT_EXAMPLE_YAML), "-o", str(tmp_path)],
+            capture_output=True, text=True,
+        )
+        assert result.returncode == 0
+        assert (tmp_path / "product_breakdown.d2").exists()
+        assert (tmp_path / "product_breakdown.md").exists()
+        assert (tmp_path / "product_breakdown.csv").exists()
+
+    def test_product_diagram_nonexistent_input(self, tmp_path):
+        cli_path = Path(sys.executable).parent / "systems-engineering"
+        result = subprocess.run(
+            [str(cli_path), "product", "diagram",
+             str(tmp_path / "nonexistent.yaml"), "-o", str(tmp_path)],
+            capture_output=True, text=True,
+        )
+        assert result.returncode != 0
+
+    def test_product_diagram_directory_input(self, tmp_path):
+        cli_path = Path(sys.executable).parent / "systems-engineering"
+        pb_dir = REPO_ROOT / "example"
+        result = subprocess.run(
+            [str(cli_path), "product", "diagram",
+             str(pb_dir), "-o", str(tmp_path)],
+            capture_output=True, text=True,
+        )
+        assert result.returncode == 0
+        assert (tmp_path / "product_breakdown.d2").exists()
+
+
 # --- Golden file tests ---
 
 
@@ -270,7 +314,7 @@ class TestGoldenFiles:
         self.data = example_data
 
     def test_d2_matches_golden(self):
-        generated = yaml_to_d2(self.data)
+        generated = functional_yaml_to_d2(self.data)
         golden = (GOLDEN_DIR / "functional_decomposition.d2").read_text()
         assert generated == golden, "D2 output does not match golden file"
 
@@ -295,6 +339,42 @@ class TestGoldenFiles:
         generated = (generated_output / "functional_decomposition.png").read_bytes()
         golden = (GOLDEN_DIR / "functional_decomposition.png").read_bytes()
         assert generated == golden, "PNG output does not match golden file"
+
+
+# --- Product golden file tests ---
+
+
+class TestProductGoldenFiles:
+    @pytest.fixture(autouse=True)
+    def setup(self):
+        self.data = load_yaml(PRODUCT_EXAMPLE_YAML)
+
+    def test_d2_matches_golden(self):
+        generated = product_yaml_to_d2(self.data)
+        golden = (GOLDEN_DIR / "product_breakdown.d2").read_text()
+        assert generated == golden, "Product D2 output does not match golden file"
+
+    def test_markdown_matches_golden(self):
+        generated = product_yaml_to_markdown(self.data)
+        golden = (GOLDEN_DIR / "product_breakdown.md").read_text()
+        assert generated == golden, "Product markdown output does not match golden file"
+
+    def test_csv_matches_golden(self):
+        generated = product_yaml_to_csv(self.data)
+        golden = (GOLDEN_DIR / "product_breakdown.csv").open(newline="").read()
+        assert generated == golden, "Product CSV output does not match golden file"
+
+    @pytest.mark.skipif(not HAS_D2, reason="d2 not installed")
+    def test_svg_matches_golden(self, generated_product_output):
+        generated = (generated_product_output / "product_breakdown.svg").read_bytes()
+        golden = (GOLDEN_DIR / "product_breakdown.svg").read_bytes()
+        assert generated == golden, "Product SVG output does not match golden file"
+
+    @pytest.mark.skipif(not HAS_D2, reason="d2 not installed")
+    def test_png_matches_golden(self, generated_product_output):
+        generated = (generated_product_output / "product_breakdown.png").read_bytes()
+        golden = (GOLDEN_DIR / "product_breakdown.png").read_bytes()
+        assert generated == golden, "Product PNG output does not match golden file"
 
 
 # --- find_subtree tests ---
@@ -624,3 +704,296 @@ class TestDirectoryDefaults:
         run_product_verify_command(args)
         captured = capsys.readouterr()
         assert "\u2705 All functions allocated." in captured.out
+
+
+# --- Product D2 output tests ---
+
+
+class TestProductD2Output:
+    @pytest.fixture(autouse=True)
+    def setup(self):
+        self.data = load_yaml(PRODUCT_EXAMPLE_YAML)
+        self.d2 = product_yaml_to_d2(self.data)
+        self.lines = self.d2.splitlines()
+
+    def test_config_block_present(self):
+        assert "layout-engine: elk" in self.d2
+        assert "theme-id: 300" in self.d2
+
+    def test_direction_down(self):
+        assert "direction: down" in self.d2
+
+    def test_root_node(self):
+        assert "root: Example System" in self.d2
+        assert "root.width: 250" in self.d2
+
+    def test_all_component_names_present(self):
+        for name in ["Power Subsystem", "Thermal Subsystem", "Data Subsystem"]:
+            assert any(name in line for line in self.lines), (
+                f"Component '{name}' not found in d2 output"
+            )
+
+    def test_component_arrows_from_root(self):
+        assert "root -> p0" in self.d2
+
+    def test_all_ci_names_present(self):
+        ci_names = [
+            "Solar Panel Assembly", "Battery Pack", "Power Distribution Unit",
+            "Temperature Sensor Array", "Cooling System",
+            "Data Acquisition Module", "Processing Unit", "Storage Module",
+        ]
+        for name in ci_names:
+            # CI labels have spaces replaced with literal \n in d2 output
+            label = name.replace(" ", r"\n")
+            assert label in self.d2, (
+                f"CI '{name}' not found in d2 output"
+            )
+
+    def test_ci_nodes_have_circle_shape(self):
+        # Every CI node should have shape: circle
+        circle_lines = [l for l in self.lines if "shape: circle" in l]
+        assert len(circle_lines) == 8  # 8 CIs
+
+    def test_ci_container_grid_config(self):
+        in_container = False
+        container_count = 0
+        for line in self.lines:
+            if '_container: ""' in line:
+                in_container = True
+                container_lines = []
+            elif in_container:
+                container_lines.append(line.strip())
+                if line.strip() == "}":
+                    in_container = False
+                    container_count += 1
+                    assert "grid-columns: 3" in container_lines
+                    assert any("grid-rows:" in l for l in container_lines)
+                    assert "grid-gap: 5" in container_lines
+                    assert "stroke-width: 0" in container_lines
+                    assert "fill: transparent" in container_lines
+        assert container_count == 3
+
+    def test_node_count(self):
+        # 3 components + 8 CIs = 11 nodes with p prefix
+        node_defs = re.findall(r"^[ ]*p(\d+): .+", self.d2, re.MULTILINE)
+        assert len(node_defs) == 11
+
+    def test_ci_nodes_have_correct_dimensions(self):
+        # CIs should have width and height of 150
+        ci_width_lines = re.findall(r"p\d+\.width: 150", self.d2)
+        ci_height_lines = re.findall(r"p\d+\.height: 150", self.d2)
+        assert len(ci_width_lines) == 8  # 8 CIs
+        assert len(ci_height_lines) == 8
+
+    def test_component_nodes_have_width_250(self):
+        # 3 components should have width 250
+        comp_width_lines = re.findall(r"p\d+\.width: 250", self.d2)
+        assert len(comp_width_lines) == 3
+
+    def test_ci_labels_use_escaped_newlines(self):
+        # CI names with spaces should use literal \n instead of spaces
+        in_container = False
+        for line in self.lines:
+            if '_container: ""' in line:
+                in_container = True
+            elif in_container and line.strip() == "}":
+                in_container = False
+            elif in_container and re.match(r"\s+p\d+:", line):
+                label = line.split(":", 1)[1].strip()
+                if " " in label:
+                    # Multi-word CI names should have \n instead of spaces
+                    assert False, f"CI label '{label}' contains spaces; should use \\n"
+
+    def test_nested_components_support(self):
+        """Components with nested sub-components should recurse correctly."""
+        nested_data = {
+            "name": "Nested System",
+            "components": [{
+                "name": "Outer",
+                "components": [{
+                    "name": "Inner",
+                    "configuration_items": [{
+                        "name": "Leaf CI",
+                        "functions": ["Some Function"],
+                    }],
+                }],
+            }],
+        }
+        d2 = product_yaml_to_d2(nested_data)
+        assert "Outer" in d2
+        assert "Inner" in d2
+        assert r"Leaf\nCI" in d2
+
+    def test_no_function_names_in_output(self):
+        """Function names allocated to CIs should NOT appear in the d2 output."""
+        function_names = [
+            "Generate Power", "Store Power", "Distribute Power",
+            "Detect Temperature", "Cool Components",
+            "Collect Data", "Transform Data", "Store Data",
+        ]
+        for name in function_names:
+            assert not any(name in line for line in self.lines), (
+                f"Function name '{name}' should not appear in product d2 output"
+            )
+
+
+# --- Product Markdown structural tests ---
+
+
+class TestProductMarkdownOutput:
+    @pytest.fixture(autouse=True)
+    def setup(self):
+        self.data = load_yaml(PRODUCT_EXAMPLE_YAML)
+        self.md = product_yaml_to_markdown(self.data)
+        self.lines = self.md.splitlines()
+
+    def test_header(self):
+        assert self.lines[0] == "# Example System"
+
+    def test_table_columns(self):
+        assert "| Parent | Name | Type | Description | Functions |" in self.md
+
+    def test_root_row_present(self):
+        assert "|  | Example System | System |" in self.md
+
+    def test_component_rows_have_type(self):
+        assert "| Example System | Power Subsystem | Component |" in self.md
+        assert "| Example System | Thermal Subsystem | Component |" in self.md
+        assert "| Example System | Data Subsystem | Component |" in self.md
+
+    def test_ci_rows_have_type(self):
+        assert "| Power Subsystem | Solar Panel Assembly | Configuration Item |" in self.md
+        assert "| Thermal Subsystem | Temperature Sensor Array | Configuration Item |" in self.md
+
+    def test_ci_rows_include_functions(self):
+        assert "Generate Power" in self.md
+        assert "Store Power" in self.md
+
+    def test_row_count(self):
+        # Data rows = total lines - header (1) - blank line (1) - column header (1) - separator (1)
+        data_rows = [l for l in self.lines if l.startswith("| ") and "---" not in l and "Parent" not in l]
+        assert len(data_rows) == 12  # 1 root + 3 components + 8 CIs
+
+
+# --- Product CSV structural tests ---
+
+
+class TestProductCsvOutput:
+    @pytest.fixture(autouse=True)
+    def setup(self):
+        self.data = load_yaml(PRODUCT_EXAMPLE_YAML)
+        self.csv_str = product_yaml_to_csv(self.data)
+        reader = csv.reader(io.StringIO(self.csv_str))
+        self.rows = list(reader)
+
+    def test_header(self):
+        assert self.rows[0] == ["Parent", "Name", "Type", "Description", "Functions"]
+
+    def test_root_row_present(self):
+        assert self.rows[1][0] == ""
+        assert self.rows[1][1] == "Example System"
+        assert self.rows[1][2] == "System"
+
+    def test_component_rows_have_type(self):
+        component_rows = [r for r in self.rows[1:] if r[2] == "Component"]
+        names = {r[1] for r in component_rows}
+        assert names == {"Power Subsystem", "Thermal Subsystem", "Data Subsystem"}
+
+    def test_ci_rows_have_type(self):
+        ci_rows = [r for r in self.rows[1:] if r[2] == "Configuration Item"]
+        assert len(ci_rows) == 8
+
+    def test_ci_rows_include_functions(self):
+        ci_rows = [r for r in self.rows[1:] if r[2] == "Configuration Item"]
+        solar_row = [r for r in ci_rows if r[1] == "Solar Panel Assembly"][0]
+        assert "Generate Power" in solar_row[4]
+
+    def test_row_count(self):
+        data_rows = self.rows[1:]
+        assert len(data_rows) == 12  # 1 root + 3 components + 8 CIs
+
+
+# --- process_product_file tests ---
+
+
+@pytest.fixture(scope="module")
+def generated_product_output(tmp_path_factory):
+    """Generate all product output files once and share across tests."""
+    tmp_path = tmp_path_factory.mktemp("product_output")
+    process_product_file(PRODUCT_EXAMPLE_YAML, tmp_path)
+    return tmp_path
+
+
+class TestProcessProductFile:
+    def test_d2_file_exists(self, generated_product_output):
+        assert (generated_product_output / "product_breakdown.d2").exists()
+
+    def test_md_file_exists(self, generated_product_output):
+        assert (generated_product_output / "product_breakdown.md").exists()
+
+    def test_csv_file_exists(self, generated_product_output):
+        assert (generated_product_output / "product_breakdown.csv").exists()
+
+    @pytest.mark.skipif(not HAS_D2, reason="d2 not installed")
+    def test_svg_file_exists(self, generated_product_output):
+        assert (generated_product_output / "product_breakdown.svg").exists()
+
+    @pytest.mark.skipif(not HAS_D2, reason="d2 not installed")
+    def test_png_file_exists(self, generated_product_output):
+        assert (generated_product_output / "product_breakdown.png").exists()
+
+
+# --- Product SVG tests (require d2) ---
+
+
+@pytest.mark.skipif(not HAS_D2, reason="d2 not installed")
+class TestProductSvgOutput:
+    @pytest.fixture(autouse=True)
+    def setup(self, generated_product_output):
+        self.svg_path = generated_product_output / "product_breakdown.svg"
+        self.tree = ET.parse(self.svg_path)
+
+    def test_valid_xml(self):
+        assert self.tree is not None
+
+    def test_svg_root_element(self):
+        assert "svg" in self.tree.getroot().tag
+
+    def test_svg_contains_component_and_ci_names(self):
+        """Verify component and CI names appear as text in the SVG."""
+        # Collect text from both <text> elements and <tspan> children
+        svg_texts = set()
+        for elem in self.tree.iter("{http://www.w3.org/2000/svg}text"):
+            if elem.text and elem.text.strip():
+                svg_texts.add(elem.text.strip())
+            for child in elem:
+                if child.text and child.text.strip():
+                    svg_texts.add(child.text.strip())
+        # Component names render as single text elements
+        for name in ["POWER SUBSYSTEM", "THERMAL SUBSYSTEM", "DATA SUBSYSTEM"]:
+            assert name in svg_texts, (
+                f"'{name}' not found in SVG text elements"
+            )
+        # CI names have newline-separated words rendered as tspan elements
+        for word in ["SOLAR", "PANEL", "ASSEMBLY", "BATTERY", "PACK"]:
+            assert word in svg_texts, (
+                f"'{word}' not found in SVG text elements"
+            )
+
+
+# --- Product PNG tests (require d2) ---
+
+
+@pytest.mark.skipif(not HAS_D2, reason="d2 not installed")
+class TestProductPngOutput:
+    @pytest.fixture(autouse=True)
+    def setup(self, generated_product_output):
+        self.png_path = generated_product_output / "product_breakdown.png"
+
+    def test_png_magic_bytes(self):
+        with open(self.png_path, "rb") as f:
+            header = f.read(8)
+        assert header[:4] == b"\x89PNG"
+
+    def test_file_size_nontrivial(self):
+        assert self.png_path.stat().st_size > 1024

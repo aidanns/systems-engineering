@@ -71,6 +71,9 @@ scripts/generate.sh /path/to/output
 # Generate diagrams from all files in a directory
 .venv/bin/systems-engineering function example/ -o output/
 
+# Generate product breakdown diagrams from a single file
+.venv/bin/systems-engineering product diagram product_breakdown/example.yaml -o output/
+
 # Verify all leaf functions are allocated to configuration items
 .venv/bin/systems-engineering product verify \
     -p example/product_breakdown.yaml \

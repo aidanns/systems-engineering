@@ -9,9 +9,11 @@ import argparse
 import csv
 import importlib.metadata
 import io
+import math
 import re
 import subprocess
 import sys
+from collections.abc import Callable
 from pathlib import Path
 
 import yaml
@@ -82,28 +84,42 @@ def is_leaf(function: dict) -> bool:
     return not function.get("functions")
 
 
-def emit_node(lines: list[str], node_id: str, function: dict, indent: str = ""):
-    """Emit d2 lines for a single function node."""
-    lines.append(f"{indent}{node_id}: {function['name']}")
-    lines.append(f"{indent}{node_id}.width: 250")
-    if function.get("recently_updated"):
+def emit_node(lines: list[str], node_id: str, node: dict, indent: str = "",
+              shape: str | None = None, width: int = 250, height: int | None = None,
+              newline_spaces: bool = False):
+    """Emit d2 lines for a single labeled node."""
+    label = node['name'].replace(' ', r'\n') if newline_spaces else node['name']
+    lines.append(f"{indent}{node_id}: {label}")
+    lines.append(f"{indent}{node_id}.width: {width}")
+    if height is not None:
+        lines.append(f"{indent}{node_id}.height: {height}")
+    if shape:
+        lines.append(f"{indent}{node_id}.shape: {shape}")
+    if node.get("recently_updated"):
         lines.append(f"{indent}{node_id}.style.stroke: red")
 
 
-def emit_leaf_container(lines: list[str], parent_id: str, children: list[dict], counter: list[int]):
-    """Emit a grid container holding leaf children, connected to the parent node."""
+def emit_container(lines: list[str], parent_id: str, children: list[dict],
+                   counter: list[int], prefix: str = "f", shape: str | None = None,
+                   grid_columns: int = 1, node_width: int = 250,
+                   node_height: int | None = None, newline_spaces: bool = False):
+    """Emit a grid container holding child nodes, connected to the parent node."""
     container_id = f"{parent_id}_container"
+    grid_rows = math.ceil(len(children) / grid_columns)
     lines.append(f"{container_id}: \"\" {{")
-    lines.append(f"  grid-columns: 1")
+    lines.append(f"  grid-columns: {grid_columns}")
+    lines.append(f"  grid-rows: {grid_rows}")
     lines.append(f"  grid-gap: 5")
     lines.append(f"  style: {{")
     lines.append(f"    stroke-width: 0")
     lines.append(f"    fill: transparent")
     lines.append(f"  }}")
     for child in children:
-        child_id = f"f{counter[0]}"
+        child_id = f"{prefix}{counter[0]}"
         counter[0] += 1
-        emit_node(lines, child_id, child, indent="  ")
+        emit_node(lines, child_id, child, indent="  ", shape=shape,
+                  width=node_width, height=node_height,
+                  newline_spaces=newline_spaces)
     lines.append(f"}}")
     lines.append(f"{parent_id} -> {container_id}")
 
@@ -118,17 +134,14 @@ def function_to_d2(function: dict, parent_id: str, lines: list[str], counter: li
     lines.append(f"{parent_id} -> {node_id}")
 
     if children and all(is_leaf(c) for c in children):
-        emit_leaf_container(lines, node_id, children, counter)
+        emit_container(lines, node_id, children, counter)
     else:
         for child in children:
             function_to_d2(child, node_id, lines, counter)
 
 
-def yaml_to_d2(data: dict) -> str:
-    """Convert a functional decomposition YAML structure to a d2 definition."""
-    lines = []
-
-    # d2 configuration
+def _emit_d2_preamble(lines: list[str], data: dict):
+    """Emit the common d2 config block, direction, and root node."""
     lines.append("vars: {")
     lines.append("  d2-config: {")
     lines.append("    layout-engine: elk")
@@ -137,25 +150,62 @@ def yaml_to_d2(data: dict) -> str:
     lines.append("  }")
     lines.append("}")
     lines.append("")
-
-    # Style: top-down layout for hierarchy
     lines.append("direction: down")
     lines.append("")
-
-    # Root node
-    root_id = "root"
-    emit_node(lines, root_id, data)
+    emit_node(lines, "root", data)
     lines.append("")
+
+
+def functional_yaml_to_d2(data: dict) -> str:
+    """Convert a functional decomposition YAML structure to a d2 definition."""
+    lines = []
+    _emit_d2_preamble(lines, data)
+
+    root_id = "root"
 
     children = data.get("functions", [])
     counter = [0]
     if children and all(is_leaf(c) for c in children):
-        emit_leaf_container(lines, root_id, children, counter)
+        emit_container(lines, root_id, children, counter)
         lines.append("")
     else:
         for function in children:
             function_to_d2(function, root_id, lines, counter)
             lines.append("")
+
+    return "\n".join(lines)
+
+
+def product_component_to_d2(component: dict, parent_id: str, lines: list[str], counter: list[int]):
+    """Recursively convert a component node and its children to d2 lines."""
+    node_id = f"p{counter[0]}"
+    counter[0] += 1
+
+    emit_node(lines, node_id, component)
+    lines.append(f"{parent_id} -> {node_id}")
+
+    sub_components = component.get("components", [])
+    cis = component.get("configuration_items", [])
+
+    if sub_components:
+        for child in sub_components:
+            product_component_to_d2(child, node_id, lines, counter)
+    if cis:
+        emit_container(lines, node_id, cis, counter, prefix="p", shape="circle",
+                       grid_columns=3, node_width=150, node_height=150,
+                       newline_spaces=True)
+
+
+def product_yaml_to_d2(data: dict) -> str:
+    """Convert a product breakdown YAML structure to a d2 definition."""
+    lines = []
+    _emit_d2_preamble(lines, data)
+
+    root_id = "root"
+    counter = [0]
+    for component in data.get("components", []):
+        product_component_to_d2(component, root_id, lines, counter)
+        lines.append("")
 
     return "\n".join(lines)
 
@@ -205,6 +255,57 @@ def yaml_to_csv(data: dict) -> str:
     return output.getvalue()
 
 
+def _collect_product_rows(component: dict, parent_name: str,
+                          rows: list[tuple[str, str, str, str, str]]):
+    """Recursively collect product breakdown rows as (parent, name, type, description, functions) tuples."""
+    name = component["name"]
+    description = component.get("description", "")
+    rows.append((parent_name, name, "Component", description, ""))
+    for child in component.get("components", []):
+        _collect_product_rows(child, name, rows)
+    for ci in component.get("configuration_items", []):
+        ci_name = ci["name"]
+        ci_desc = ci.get("description", "")
+        functions_str = ", ".join(ci.get("functions", []))
+        rows.append((name, ci_name, "Configuration Item", ci_desc, functions_str))
+
+
+def product_collect_all_rows(data: dict) -> list[tuple[str, str, str, str, str]]:
+    """Collect all rows for product breakdown tabular output, including the root node."""
+    rows: list[tuple[str, str, str, str, str]] = []
+    root_name = data["name"]
+    rows.append(("", root_name, "System", data.get("description", ""), ""))
+    for component in data.get("components", []):
+        _collect_product_rows(component, root_name, rows)
+    return rows
+
+
+def product_yaml_to_markdown(data: dict) -> str:
+    """Convert a product breakdown YAML structure to a markdown table."""
+    rows = product_collect_all_rows(data)
+
+    lines = [
+        f"# {data['name']}",
+        "",
+        "| Parent | Name | Type | Description | Functions |",
+        "|--------|------|------|-------------|-----------|",
+    ]
+    for parent, name, type_, description, functions in rows:
+        lines.append(f"| {parent} | {name} | {type_} | {description} | {functions} |")
+
+    return "\n".join(lines) + "\n"
+
+
+def product_yaml_to_csv(data: dict) -> str:
+    """Convert a product breakdown YAML structure to a CSV table."""
+    rows = product_collect_all_rows(data)
+    output = io.StringIO()
+    writer = csv.writer(output)
+    writer.writerow(["Parent", "Name", "Type", "Description", "Functions"])
+    writer.writerows(rows)
+    return output.getvalue()
+
+
 def render_d2(d2_path: Path, output_path: Path):
     """Run d2 to render a .d2 file to the given output format (determined by extension)."""
     try:
@@ -223,6 +324,33 @@ def render_d2(d2_path: Path, output_path: Path):
         sys.exit(1)
 
 
+def _write_outputs(data: dict, yaml_path: Path, output_dir: Path,
+                   to_d2: Callable[[dict], str], to_md: Callable[[dict], str],
+                   to_csv: Callable[[dict], str]):
+    """Generate .d2, .svg, .png, .md, and .csv output files."""
+    stem = yaml_path.stem
+    d2_path = output_dir / f"{stem}.d2"
+    svg_path = output_dir / f"{stem}.svg"
+    png_path = output_dir / f"{stem}.png"
+    md_path = output_dir / f"{stem}.md"
+    csv_path = output_dir / f"{stem}.csv"
+
+    d2_path.write_text(to_d2(data))
+    print(f"Written: {d2_path}")
+
+    render_d2(d2_path, svg_path)
+    print(f"Written: {svg_path}")
+
+    render_d2(d2_path, png_path)
+    print(f"Written: {png_path}")
+
+    md_path.write_text(to_md(data))
+    print(f"Written: {md_path}")
+
+    csv_path.write_text(to_csv(data))
+    print(f"Written: {csv_path}")
+
+
 def process_file(yaml_path: Path, output_dir: Path, root: str | None = None,
                   filters: list[str] | None = None, include_descendants: bool = False):
     """Process a single YAML file: generate .d2, .svg, .png, .md, and .csv."""
@@ -238,30 +366,15 @@ def process_file(yaml_path: Path, output_dir: Path, root: str | None = None,
     if filters:
         data = filter_tree(data, filters, include_descendants)
 
-    stem = yaml_path.stem
-    d2_path = output_dir / f"{stem}.d2"
-    svg_path = output_dir / f"{stem}.svg"
-    png_path = output_dir / f"{stem}.png"
-    md_path = output_dir / f"{stem}.md"
+    _write_outputs(data, yaml_path, output_dir,
+                   functional_yaml_to_d2, yaml_to_markdown, yaml_to_csv)
 
-    d2_content = yaml_to_d2(data)
-    d2_path.write_text(d2_content)
-    print(f"Written: {d2_path}")
 
-    render_d2(d2_path, svg_path)
-    print(f"Written: {svg_path}")
-
-    render_d2(d2_path, png_path)
-    print(f"Written: {png_path}")
-
-    md_content = yaml_to_markdown(data)
-    md_path.write_text(md_content)
-    print(f"Written: {md_path}")
-
-    csv_path = output_dir / f"{stem}.csv"
-    csv_content = yaml_to_csv(data)
-    csv_path.write_text(csv_content)
-    print(f"Written: {csv_path}")
+def process_product_file(yaml_path: Path, output_dir: Path):
+    """Process a single product breakdown YAML file: generate .d2, .svg, .png, .md, and .csv."""
+    data = load_yaml(yaml_path)
+    _write_outputs(data, yaml_path, output_dir,
+                   product_yaml_to_d2, product_yaml_to_markdown, product_yaml_to_csv)
 
 
 def collect_leaf_function_names(data: dict) -> set[str]:
@@ -338,32 +451,45 @@ def run_product_verify_command(args):
         sys.exit(1)
 
 
-def run_function_command(args):
-    """Handle the 'function' subcommand."""
-    input_path: Path = args.input
-    output_dir: Path = args.output
-
+def _dispatch_yaml_files(input_path: Path, output_dir: Path, process_fn,
+                         default_stem: str):
+    """Validate input, create output dir, and dispatch YAML files to process_fn."""
     if not input_path.exists():
         print(f"Error: {input_path} does not exist.", file=sys.stderr)
         sys.exit(1)
 
     output_dir.mkdir(parents=True, exist_ok=True)
 
+    if input_path.is_file():
+        process_fn(input_path, output_dir)
+    elif input_path.is_dir():
+        default_file = resolve_directory_to_file(input_path, default_stem)
+        if not default_file.exists():
+            print(f"Error: no {default_stem}.yaml found in {input_path}.", file=sys.stderr)
+            sys.exit(1)
+        process_fn(default_file, output_dir)
+    else:
+        print(f"Error: {input_path} is not a file or directory.", file=sys.stderr)
+        sys.exit(1)
+
+
+def run_product_diagram_command(args):
+    """Handle the 'product diagram' subcommand."""
+    _dispatch_yaml_files(args.input, args.output, process_product_file,
+                         "product_breakdown")
+
+
+def run_function_command(args):
+    """Handle the 'function' subcommand."""
     root = args.root
     filters = args.filter
     include_descendants = args.include_descendants
 
-    if input_path.is_file():
-        process_file(input_path, output_dir, root, filters, include_descendants)
-    elif input_path.is_dir():
-        default_file = resolve_directory_to_file(input_path, "functional_decomposition")
-        if not default_file.exists():
-            print(f"Error: no functional_decomposition.yaml found in {input_path}.", file=sys.stderr)
-            sys.exit(1)
-        process_file(default_file, output_dir, root, filters, include_descendants)
-    else:
-        print(f"Error: {input_path} is not a file or directory.", file=sys.stderr)
-        sys.exit(1)
+    def process_fn(yaml_path, output_dir):
+        process_file(yaml_path, output_dir, root, filters, include_descendants)
+
+    _dispatch_yaml_files(args.input, args.output, process_fn,
+                         "functional_decomposition")
 
 
 def main():
@@ -441,6 +567,24 @@ def main():
         help="Functional decomposition YAML file or directory (expects functional_decomposition.yaml).",
     )
     verify_parser.set_defaults(func=run_product_verify_command)
+
+    # 'product diagram' subcommand
+    diagram_parser = product_subparsers.add_parser(
+        "diagram",
+        help="Generate product breakdown diagrams.",
+    )
+    diagram_parser.add_argument(
+        "input",
+        type=Path,
+        help="Product breakdown YAML file or directory.",
+    )
+    diagram_parser.add_argument(
+        "-o", "--output",
+        type=Path,
+        default=Path("output"),
+        help="Output directory (default: output/).",
+    )
+    diagram_parser.set_defaults(func=run_product_diagram_command)
 
     args = parser.parse_args()
     args.func(args)
