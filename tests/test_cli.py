@@ -613,7 +613,7 @@ class TestDirectoryDefaults:
         run_function_command(args)
         assert (output_dir / "functional_decomposition.d2").exists()
 
-    def test_product_verify_directory_resolves_default_files(self, tmp_path):
+    def test_product_verify_directory_resolves_default_files(self, tmp_path, capsys):
         """When given directories, product verify should resolve default filenames."""
         shutil.copy(EXAMPLE_YAML, tmp_path / "functional_decomposition.yaml")
         shutil.copy(PRODUCT_EXAMPLE_YAML, tmp_path / "product_breakdown.yaml")
@@ -621,6 +621,6 @@ class TestDirectoryDefaults:
             functional_decomposition=tmp_path,
             product_breakdown=tmp_path,
         )
-        # Should not raise an error about missing files. The verify result itself
-        # (all allocated vs some unallocated) depends on the example data.
         run_product_verify_command(args)
+        captured = capsys.readouterr()
+        assert "\u2705 All functions allocated." in captured.out

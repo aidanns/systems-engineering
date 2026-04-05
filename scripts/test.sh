@@ -12,16 +12,12 @@ fi
 PYTHON="$REPO_ROOT/.venv/bin/python"
 
 echo "Checking YAML files parse correctly..."
-for f in "$REPO_ROOT"/example/functional_decomposition.yaml; do
-    [ -f "$f" ] || continue
-    "$PYTHON" -c "import yaml; yaml.safe_load(open('$f'))" && echo "  OK: $f" || { echo "  FAIL: $f"; exit 1; }
-done
+f="$REPO_ROOT/example/functional_decomposition.yaml"
+"$PYTHON" -c "import yaml; yaml.safe_load(open('$f'))" && echo "  OK: $f" || { echo "  FAIL: $f"; exit 1; }
 
 echo "Checking product breakdown YAML files parse correctly..."
-for f in "$REPO_ROOT"/example/product_breakdown.yaml; do
-    [ -f "$f" ] || continue
-    "$PYTHON" -c "import yaml; yaml.safe_load(open('$f'))" && echo "  OK: $f" || { echo "  FAIL: $f"; exit 1; }
-done
+f="$REPO_ROOT/example/product_breakdown.yaml"
+"$PYTHON" -c "import yaml; yaml.safe_load(open('$f'))" && echo "  OK: $f" || { echo "  FAIL: $f"; exit 1; }
 
 echo "Checking product verify..."
 "$SYSTEMS_ENGINEERING" product verify \
@@ -31,31 +27,29 @@ echo "Checking product verify..."
 echo "Checking file generation..."
 TMPDIR="$(mktemp -d)"
 trap 'rm -rf "$TMPDIR"' EXIT
-for f in "$REPO_ROOT"/example/functional_decomposition.yaml; do
-    [ -f "$f" ] || continue
-    "$SYSTEMS_ENGINEERING" function "$f" -o "$TMPDIR" 2>/dev/null || true
-    stem="$(basename "${f%.*}")"
-    for ext in d2 svg png md csv; do
-        output_file="${stem}.$ext"
-        if [ -f "$TMPDIR/$output_file" ]; then
-            echo "  OK: $f -> $output_file"
-        else
-            echo "  FAIL: $f (no $output_file output)" >&2
-            exit 1
-        fi
-    done
-    # Check that CSV row count matches the number of functions in the YAML (+1 for root).
-    csv_file="${stem}.csv"
-    csv_rows=$(( $(wc -l < "$TMPDIR/$csv_file") - 1 ))  # subtract header
-    yaml_functions=$(yq '[.functions // [] | .. | select(has("name")) | .name] | length' "$f")
-    expected_rows=$(( yaml_functions + 1 ))  # +1 for root node row
-    if [ "$csv_rows" -eq "$expected_rows" ]; then
-        echo "  OK: $f -> $csv_file has $csv_rows data rows matching $yaml_functions functions + 1 root"
+f="$REPO_ROOT/example/functional_decomposition.yaml"
+"$SYSTEMS_ENGINEERING" function "$f" -o "$TMPDIR" 2>/dev/null || true
+stem="$(basename "${f%.*}")"
+for ext in d2 svg png md csv; do
+    output_file="${stem}.$ext"
+    if [ -f "$TMPDIR/$output_file" ]; then
+        echo "  OK: $f -> $output_file"
     else
-        echo "  FAIL: $f -> $csv_file has $csv_rows data rows but expected $expected_rows ($yaml_functions functions + 1 root)" >&2
+        echo "  FAIL: $f (no $output_file output)" >&2
         exit 1
     fi
 done
+# Check that CSV row count matches the number of functions in the YAML (+1 for root).
+csv_file="${stem}.csv"
+csv_rows=$(( $(wc -l < "$TMPDIR/$csv_file") - 1 ))  # subtract header
+yaml_functions=$(yq '[.functions // [] | .. | select(has("name")) | .name] | length' "$f")
+expected_rows=$(( yaml_functions + 1 ))  # +1 for root node row
+if [ "$csv_rows" -eq "$expected_rows" ]; then
+    echo "  OK: $f -> $csv_file has $csv_rows data rows matching $yaml_functions functions + 1 root"
+else
+    echo "  FAIL: $f -> $csv_file has $csv_rows data rows but expected $expected_rows ($yaml_functions functions + 1 root)" >&2
+    exit 1
+fi
 
 echo "Running pytest..."
 "$REPO_ROOT/.venv/bin/pytest" "$REPO_ROOT/tests/" -v

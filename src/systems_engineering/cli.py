@@ -385,7 +385,7 @@ def main():
     function_parser.add_argument(
         "input",
         type=Path,
-        help="YAML file or directory containing YAML files.",
+        help="YAML file or directory (expects functional_decomposition.yaml).",
     )
     function_parser.add_argument(
         "-o", "--output",
@@ -432,13 +432,13 @@ def main():
         "-p", "--product-breakdown",
         type=Path,
         required=True,
-        help="Product breakdown YAML file.",
+        help="Product breakdown YAML file or directory (expects product_breakdown.yaml).",
     )
     verify_parser.add_argument(
         "-f", "--functional-decomposition",
         type=Path,
         required=True,
-        help="Functional decomposition YAML file.",
+        help="Functional decomposition YAML file or directory (expects functional_decomposition.yaml).",
     )
     verify_parser.set_defaults(func=run_product_verify_command)
 

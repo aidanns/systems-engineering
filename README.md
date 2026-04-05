@@ -46,7 +46,7 @@ systems-engineering --version
 
 ### Functional Decomposition
 
-1. Create a YAML definition file in `example/`:
+1. Create a YAML definition file (see `example/` for reference):
 
 ```yaml
 name: System Name
