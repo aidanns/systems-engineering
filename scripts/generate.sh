@@ -2,9 +2,9 @@
 set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
-PYTHON="$REPO_ROOT/.venv/bin/python"
+SYSTEMS_ENGINEERING="$REPO_ROOT/.venv/bin/systems-engineering"
 
-if [ ! -f "$PYTHON" ]; then
+if [ ! -f "$SYSTEMS_ENGINEERING" ]; then
     echo "Error: Virtual environment not found. Run scripts/build.sh first." >&2
     exit 1
 fi
@@ -18,6 +18,6 @@ fi
 OUTPUT_DIR="${1:-$REPO_ROOT/output}"
 
 echo "Generating diagrams to $OUTPUT_DIR..."
-"$PYTHON" "$REPO_ROOT/generate.py" function "$REPO_ROOT/functional_decomposition/" -o "$OUTPUT_DIR"
+"$SYSTEMS_ENGINEERING" function "$REPO_ROOT/functional_decomposition/" -o "$OUTPUT_DIR"
 
 echo "Done."
