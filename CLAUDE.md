@@ -16,6 +16,7 @@ CLI tools for generating systems engineering diagrams from YAML definitions, ren
 - `tests/golden/` — Golden files for expected output. Used for exact-match comparison in tests.
 - `scripts/regenerate_golden.sh` — Regenerates golden files in `tests/golden/` from current CLI output.
 - `scripts/generate.sh` — Generates all diagrams from `functional_decomposition/` to `output/`.
+- `scripts/release.sh` — Creates a release: auto-determines version bump, runs tests, commits, tags, and pushes.
 
 ## YAML Schema for Functional Decomposition
 
@@ -64,7 +65,8 @@ scripts/generate.sh /path/to/output
 
 ## Releasing
 
+- Run `scripts/release.sh` to create a release. It auto-determines the version bump from conventional commit messages (breaking → major, feat → minor, other → patch).
 - Version is defined in `pyproject.toml`. Tags follow `vX.Y.Z` format.
-- The Homebrew formula is at `~/Projects/homebrew-tools/Formula/systems-engineering.rb` and must be updated with the new tag after each release.
+- The Homebrew formula is at `github.com/aidanns/homebrew-tools/Formula/systems-engineering.rb` and must be updated with the new tag after each release.
 - If Python dependencies change, the formula's `resource` blocks (URLs and SHA256 hashes) must also be updated.
 - See README.md for the full step-by-step release process.
