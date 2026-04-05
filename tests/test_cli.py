@@ -129,6 +129,7 @@ class TestD2Output:
                 if line.strip() == "}":
                     in_container = False
                     assert "grid-columns: 1" in container_lines
+                    assert any("grid-rows:" in l for l in container_lines)
                     assert "grid-gap: 5" in container_lines
                     assert "stroke-width: 0" in container_lines
                     assert "fill: transparent" in container_lines
@@ -145,6 +146,7 @@ class TestD2Output:
         d2 = yaml_to_d2(subtree)
         assert "root_container" in d2
         assert "grid-columns: 1" in d2
+        assert "grid-rows: 3" in d2
         assert "grid-gap: 5" in d2
         assert "Generate Power" in d2
         assert "Store Power" in d2
@@ -741,7 +743,9 @@ class TestProductD2Output:
             "Data Acquisition Module", "Processing Unit", "Storage Module",
         ]
         for name in ci_names:
-            assert any(name in line for line in self.lines), (
+            # CI labels have spaces replaced with newlines in d2 output
+            label = name.replace(" ", "\n")
+            assert label in self.d2, (
                 f"CI '{name}' not found in d2 output"
             )
 
@@ -763,6 +767,7 @@ class TestProductD2Output:
                     in_container = False
                     container_count += 1
                     assert "grid-columns: 3" in container_lines
+                    assert any("grid-rows:" in l for l in container_lines)
                     assert "grid-gap: 5" in container_lines
                     assert "stroke-width: 0" in container_lines
                     assert "fill: transparent" in container_lines
@@ -773,9 +778,31 @@ class TestProductD2Output:
         node_defs = re.findall(r"^[ ]*p(\d+): .+", self.d2, re.MULTILINE)
         assert len(node_defs) == 11
 
-    def test_all_nodes_have_width(self):
-        width_lines = re.findall(r"p\d+\.width: 250", self.d2)
-        assert len(width_lines) == 11
+    def test_ci_nodes_have_correct_dimensions(self):
+        # CIs should have width and height of 150
+        ci_width_lines = re.findall(r"p\d+\.width: 150", self.d2)
+        ci_height_lines = re.findall(r"p\d+\.height: 150", self.d2)
+        assert len(ci_width_lines) == 8  # 8 CIs
+        assert len(ci_height_lines) == 8
+
+    def test_component_nodes_have_width_250(self):
+        # 3 components should have width 250
+        comp_width_lines = re.findall(r"p\d+\.width: 250", self.d2)
+        assert len(comp_width_lines) == 3
+
+    def test_ci_labels_use_newlines(self):
+        # CI names with spaces should have newlines instead
+        # Check that no CI node inside a container has a space in its label
+        in_container = False
+        for line in self.lines:
+            if '_container: ""' in line:
+                in_container = True
+            elif in_container and line.strip() == "}":
+                in_container = False
+            elif in_container and re.match(r"\s+p\d+:", line):
+                label = line.split(":", 1)[1].strip()
+                if len(label) > 1:  # skip single-word labels
+                    assert " " not in label or "\n" in label
 
     def test_nested_components_support(self):
         """Components with nested sub-components should recurse correctly."""
@@ -795,7 +822,7 @@ class TestProductD2Output:
         d2 = product_yaml_to_d2(nested_data)
         assert "Outer" in d2
         assert "Inner" in d2
-        assert "Leaf CI" in d2
+        assert "Leaf\nCI" in d2
 
     def test_no_function_names_in_output(self):
         """Function names allocated to CIs should NOT appear in the d2 output."""
@@ -936,10 +963,15 @@ class TestProductSvgOutput:
         """Verify component and CI names appear as text elements in the SVG."""
         svg_texts = {elem.text.strip() for elem in self.tree.iter("{http://www.w3.org/2000/svg}text")
                      if elem.text and elem.text.strip()}
-        for name in ["POWER SUBSYSTEM", "THERMAL SUBSYSTEM", "DATA SUBSYSTEM",
-                      "SOLAR PANEL ASSEMBLY", "BATTERY PACK"]:
+        # Component names render as single text elements (no newline conversion)
+        for name in ["POWER SUBSYSTEM", "THERMAL SUBSYSTEM", "DATA SUBSYSTEM"]:
             assert name in svg_texts, (
                 f"'{name}' not found in SVG text elements"
+            )
+        # CI names have spaces converted to newlines, so each word is a separate text element
+        for word in ["SOLAR", "PANEL", "ASSEMBLY", "BATTERY", "PACK"]:
+            assert word in svg_texts, (
+                f"'{word}' not found in SVG text elements"
             )
 
 

@@ -9,6 +9,7 @@ import argparse
 import csv
 import importlib.metadata
 import io
+import math
 import re
 import subprocess
 import sys
@@ -84,10 +85,14 @@ def is_leaf(function: dict) -> bool:
 
 
 def emit_node(lines: list[str], node_id: str, node: dict, indent: str = "",
-              shape: str | None = None):
+              shape: str | None = None, width: int = 250, height: int | None = None,
+              newline_spaces: bool = False):
     """Emit d2 lines for a single labeled node."""
-    lines.append(f"{indent}{node_id}: {node['name']}")
-    lines.append(f"{indent}{node_id}.width: 250")
+    label = node['name'].replace(' ', '\n') if newline_spaces else node['name']
+    lines.append(f"{indent}{node_id}: {label}")
+    lines.append(f"{indent}{node_id}.width: {width}")
+    if height is not None:
+        lines.append(f"{indent}{node_id}.height: {height}")
     if shape:
         lines.append(f"{indent}{node_id}.shape: {shape}")
     if node.get("recently_updated"):
@@ -96,11 +101,14 @@ def emit_node(lines: list[str], node_id: str, node: dict, indent: str = "",
 
 def emit_container(lines: list[str], parent_id: str, children: list[dict],
                    counter: list[int], prefix: str = "f", shape: str | None = None,
-                   grid_columns: int = 1):
+                   grid_columns: int = 1, node_width: int = 250,
+                   node_height: int | None = None, newline_spaces: bool = False):
     """Emit a grid container holding child nodes, connected to the parent node."""
     container_id = f"{parent_id}_container"
+    grid_rows = math.ceil(len(children) / grid_columns)
     lines.append(f"{container_id}: \"\" {{")
     lines.append(f"  grid-columns: {grid_columns}")
+    lines.append(f"  grid-rows: {grid_rows}")
     lines.append(f"  grid-gap: 5")
     lines.append(f"  style: {{")
     lines.append(f"    stroke-width: 0")
@@ -109,7 +117,9 @@ def emit_container(lines: list[str], parent_id: str, children: list[dict],
     for child in children:
         child_id = f"{prefix}{counter[0]}"
         counter[0] += 1
-        emit_node(lines, child_id, child, indent="  ", shape=shape)
+        emit_node(lines, child_id, child, indent="  ", shape=shape,
+                  width=node_width, height=node_height,
+                  newline_spaces=newline_spaces)
     lines.append(f"}}")
     lines.append(f"{parent_id} -> {container_id}")
 
@@ -182,7 +192,8 @@ def component_to_d2(component: dict, parent_id: str, lines: list[str], counter: 
             component_to_d2(child, node_id, lines, counter)
     if cis:
         emit_container(lines, node_id, cis, counter, prefix="p", shape="circle",
-                       grid_columns=3)
+                       grid_columns=3, node_width=150, node_height=150,
+                       newline_spaces=True)
 
 
 def product_yaml_to_d2(data: dict) -> str:
