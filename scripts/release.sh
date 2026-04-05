@@ -3,6 +3,12 @@ set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 
+# Validate arguments
+case "${1:-}" in
+    --yes|"") ;;
+    *) echo "Usage: $0 [--yes]"; exit 1 ;;
+esac
+
 # Guard: must be on main branch
 current_branch=$(git branch --show-current)
 if [ "$current_branch" != "main" ]; then
@@ -68,11 +74,13 @@ if git rev-parse "$new_tag" >/dev/null 2>&1; then
     exit 1
 fi
 
-# Confirm with user
-read -r -p "Proceed with release $new_tag? [y/N] " confirm
-if [[ ! "$confirm" =~ ^[Yy]$ ]]; then
-    echo "Aborted."
-    exit 1
+# Confirm with user (skip with --yes flag)
+if [[ "${1:-}" != "--yes" ]]; then
+    read -r -p "Proceed with release $new_tag? [y/N] " confirm
+    if [[ ! "$confirm" =~ ^[Yy]$ ]]; then
+        echo "Aborted."
+        exit 1
+    fi
 fi
 
 # Run tests
