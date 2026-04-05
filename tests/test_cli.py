@@ -149,6 +149,9 @@ class TestMarkdownOutput:
     def test_table_columns(self):
         assert "| Parent | Function | Description |" in self.md
 
+    def test_root_row_present(self):
+        assert "|  | Example System |" in self.md
+
     def test_all_functions_present(self, all_functions):
         for parent_name, func in all_functions:
             name = func["name"]
@@ -161,7 +164,7 @@ class TestMarkdownOutput:
     def test_row_count(self, all_functions):
         # Data rows = total lines - header (1) - blank line (1) - column header (1) - separator (1)
         data_rows = [l for l in self.lines if l.startswith("| ") and "---" not in l and "Parent" not in l]
-        assert len(data_rows) == len(all_functions)
+        assert len(data_rows) == len(all_functions) + 1  # +1 for root row
 
 
 # --- CSV structural tests ---
@@ -178,6 +181,10 @@ class TestCsvOutput:
     def test_header(self):
         assert self.rows[0] == ["Parent", "Function", "Description"]
 
+    def test_root_row_present(self):
+        assert self.rows[1][0] == ""
+        assert self.rows[1][1] == "Example System"
+
     def test_all_functions_present(self, all_functions):
         data_rows = self.rows[1:]
         for parent_name, func in all_functions:
@@ -189,7 +196,7 @@ class TestCsvOutput:
 
     def test_row_count(self, all_functions):
         data_rows = self.rows[1:]
-        assert len(data_rows) == len(all_functions)
+        assert len(data_rows) == len(all_functions) + 1  # +1 for root row
 
 
 # --- SVG tests (require d2) ---
@@ -375,3 +382,26 @@ class TestFilterTree:
         store = pm["functions"][0]
         assert store["name"] == "Store Power"
         assert store.get("recently_updated") is True
+
+    def test_filter_case_insensitive(self):
+        result = filter_tree(self.data, ["power"], include_descendants=False)
+        names = self._names(result)
+        assert "Power Management" in names
+        assert "Generate Power" in names
+        assert "Store Power" in names
+        assert "Distribute Power" in names
+
+
+# --- D2 leaf container tests ---
+
+
+class TestD2LeafContainer:
+    def test_root_children_all_leaves_use_container(self, example_data):
+        subtree = find_subtree(example_data, "Power Management")
+        d2 = yaml_to_d2(subtree)
+        assert "root_container" in d2
+        assert "grid-columns: 1" in d2
+        assert "grid-gap: 5" in d2
+        assert "Generate Power" in d2
+        assert "Store Power" in d2
+        assert "Distribute Power" in d2

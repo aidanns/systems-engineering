@@ -33,14 +33,15 @@ for f in "$REPO_ROOT"/functional_decomposition/*.yaml "$REPO_ROOT"/functional_de
             exit 1
         fi
     done
-    # Check that CSV row count matches the number of functions in the YAML.
+    # Check that CSV row count matches the number of functions in the YAML (+1 for root).
     csv_file="${stem}_functions.csv"
     csv_rows=$(( $(wc -l < "$TMPDIR/$csv_file") - 1 ))  # subtract header
     yaml_functions=$(yq '[.functions // [] | .. | select(has("name")) | .name] | length' "$f")
-    if [ "$csv_rows" -eq "$yaml_functions" ]; then
-        echo "  OK: $f -> $csv_file has $csv_rows data rows matching $yaml_functions functions"
+    expected_rows=$(( yaml_functions + 1 ))  # +1 for root node row
+    if [ "$csv_rows" -eq "$expected_rows" ]; then
+        echo "  OK: $f -> $csv_file has $csv_rows data rows matching $yaml_functions functions + 1 root"
     else
-        echo "  FAIL: $f -> $csv_file has $csv_rows data rows but YAML has $yaml_functions functions" >&2
+        echo "  FAIL: $f -> $csv_file has $csv_rows data rows but expected $expected_rows ($yaml_functions functions + 1 root)" >&2
         exit 1
     fi
 done

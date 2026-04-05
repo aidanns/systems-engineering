@@ -40,7 +40,7 @@ def filter_tree(data: dict, filters: list[str], include_descendants: bool) -> di
     to a matched node are included to keep the tree connected.
     If include_descendants is True, all descendants of matched nodes are also included.
     """
-    compiled = [re.compile(f) for f in filters]
+    compiled = [re.compile(f, re.IGNORECASE) for f in filters]
 
     def matches(name: str) -> bool:
         return any(p.search(name) for p in compiled)
@@ -142,10 +142,28 @@ def yaml_to_d2(data: dict) -> str:
     emit_node(lines, root_id, data)
     lines.append("")
 
+    children = data.get("functions", [])
     counter = [0]
-    for function in data.get("functions", []):
-        function_to_d2(function, root_id, lines, counter)
+    if children and all(is_leaf(c) for c in children):
+        container_id = f"{root_id}_container"
+        lines.append(f"{container_id}: \"\" {{")
+        lines.append(f"  grid-columns: 1")
+        lines.append(f"  grid-gap: 5")
+        lines.append(f"  style: {{")
+        lines.append(f"    stroke-width: 0")
+        lines.append(f"    fill: transparent")
+        lines.append(f"  }}")
+        for function in children:
+            child_id = f"f{counter[0]}"
+            counter[0] += 1
+            emit_node(lines, child_id, function, indent="  ")
+        lines.append(f"}}")
+        lines.append(f"{root_id} -> {container_id}")
         lines.append("")
+    else:
+        for function in children:
+            function_to_d2(function, root_id, lines, counter)
+            lines.append("")
 
     return "\n".join(lines)
 
@@ -163,6 +181,7 @@ def yaml_to_markdown(data: dict) -> str:
     """Convert a functional decomposition YAML structure to a markdown table."""
     rows: list[tuple[str, str, str]] = []
     root_name = data["name"]
+    rows.append(("", root_name, data.get("description", "")))
     for function in data.get("functions", []):
         collect_functions(function, root_name, rows)
 
@@ -182,6 +201,7 @@ def yaml_to_csv(data: dict) -> str:
     """Convert a functional decomposition YAML structure to a CSV table."""
     rows: list[tuple[str, str, str]] = []
     root_name = data["name"]
+    rows.append(("", root_name, data.get("description", "")))
     for function in data.get("functions", []):
         collect_functions(function, root_name, rows)
 
