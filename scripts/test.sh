@@ -24,22 +24,17 @@ for f in "$REPO_ROOT"/functional_decomposition/*.yaml "$REPO_ROOT"/functional_de
     # check whichever output files were created.
     "$PYTHON" "$REPO_ROOT/generate.py" function "$f" -o "$TMPDIR" 2>/dev/null || true
     stem="$(basename "${f%.*}")"
-    for ext in d2 svg png md; do
-        if [ -f "$TMPDIR/$stem.$ext" ]; then
-            echo "  OK: $f -> $stem.$ext"
+    for ext in d2 svg png md csv; do
+        output_file="${stem}_functions.$ext"
+        if [ -f "$TMPDIR/$output_file" ]; then
+            echo "  OK: $f -> $output_file"
         else
-            echo "  FAIL: $f (no .$ext output)" >&2
+            echo "  FAIL: $f (no $output_file output)" >&2
             exit 1
         fi
     done
-    csv_file="${stem}_functions.csv"
-    if [ -f "$TMPDIR/$csv_file" ]; then
-        echo "  OK: $f -> $csv_file"
-    else
-        echo "  FAIL: $f (no $csv_file output)" >&2
-        exit 1
-    fi
     # Check that CSV row count matches the number of functions in the YAML.
+    csv_file="${stem}_functions.csv"
     csv_rows=$(( $(wc -l < "$TMPDIR/$csv_file") - 1 ))  # subtract header
     yaml_functions=$(yq '[.functions // [] | .. | select(has("name")) | .name] | length' "$f")
     if [ "$csv_rows" -eq "$yaml_functions" ]; then

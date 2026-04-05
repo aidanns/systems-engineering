@@ -159,10 +159,10 @@ def process_file(yaml_path: Path, output_dir: Path):
     data = load_yaml(yaml_path)
 
     stem = yaml_path.stem
-    d2_path = output_dir / f"{stem}.d2"
-    svg_path = output_dir / f"{stem}.svg"
-    png_path = output_dir / f"{stem}.png"
-    md_path = output_dir / f"{stem}.md"
+    d2_path = output_dir / f"{stem}_functions.d2"
+    svg_path = output_dir / f"{stem}_functions.svg"
+    png_path = output_dir / f"{stem}_functions.png"
+    md_path = output_dir / f"{stem}_functions.md"
 
     d2_content = yaml_to_d2(data)
     d2_path.write_text(d2_content)
