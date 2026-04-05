@@ -302,6 +302,14 @@ def run_product_verify_command(args):
     all_functions = collect_leaf_function_names(fd_data)
     allocated = collect_allocated_functions(pb_data)
 
+    if not all_functions:
+        print("\u26a0\ufe0f No leaf functions found in functional decomposition.", file=sys.stderr)
+        sys.exit(1)
+
+    unknown = sorted(allocated - all_functions)
+    if unknown:
+        print(f"\u26a0\ufe0f Some allocated functions not found in functional decomposition: {', '.join(unknown)}", file=sys.stderr)
+
     unallocated = sorted(all_functions - allocated)
 
     if not unallocated:

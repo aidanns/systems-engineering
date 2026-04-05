@@ -491,8 +491,8 @@ class TestProductVerify:
         names = [n.strip() for n in names_str.split(",")]
         assert names == sorted(names)
 
-    def test_extra_allocated_ignored(self, capsys, tmp_path):
-        """CIs referencing functions not in the FD should not cause errors."""
+    def test_extra_allocated_warns(self, capsys, tmp_path):
+        """CIs referencing functions not in the FD should warn but still pass."""
         pb_with_extra = {
             "name": "System",
             "components": [{
@@ -515,6 +515,8 @@ class TestProductVerify:
         run_product_verify_command(args)
         captured = capsys.readouterr()
         assert "\u2705 All functions allocated." in captured.out
+        assert "Nonexistent Function" in captured.err
+        assert "not found in functional decomposition" in captured.err
 
     def test_nested_components(self):
         """collect_allocated_functions should recurse through nested component hierarchies."""
@@ -536,6 +538,17 @@ class TestProductVerify:
         }
         allocated = collect_allocated_functions(nested_pb)
         assert allocated == {"Deeply Nested Function"}
+
+    def test_empty_fd_exits(self, tmp_path):
+        """An FD with no leaf functions should exit with an error, not vacuously pass."""
+        empty_fd = {"name": "Empty System"}
+        fd_path = tmp_path / "empty_fd.yaml"
+        fd_path.write_text(yaml.dump(empty_fd))
+
+        args = _make_verify_args(fd_path, PRODUCT_EXAMPLE_YAML)
+        with pytest.raises(SystemExit) as exc_info:
+            run_product_verify_command(args)
+        assert exc_info.value.code == 1
 
     def test_nonexistent_fd_exits(self, tmp_path):
         pb_path = tmp_path / "exists.yaml"

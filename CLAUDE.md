@@ -43,7 +43,7 @@ components:
     components:                        # optional nested children
       - name: <sub-component name>
         description: <string>
-    configuration_items:               # on leaf components only
+    configuration_items:               # typically on leaf components
       - name: <CI name>
         description: <string>          # optional
         functions:                     # allocated function names (strings)
