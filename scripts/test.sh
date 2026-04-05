@@ -31,7 +31,7 @@ f="$REPO_ROOT/example/functional_decomposition.yaml"
 "$SYSTEMS_ENGINEERING" function "$f" -o "$TMPDIR" 2>/dev/null || true
 stem="$(basename "${f%.*}")"
 for ext in d2 svg png md csv; do
-    output_file="${stem}_functions.$ext"
+    output_file="${stem}.$ext"
     if [ -f "$TMPDIR/$output_file" ]; then
         echo "  OK: $f -> $output_file"
     else
@@ -40,7 +40,7 @@ for ext in d2 svg png md csv; do
     fi
 done
 # Check that CSV row count matches the number of functions in the YAML (+1 for root).
-csv_file="${stem}_functions.csv"
+csv_file="${stem}.csv"
 csv_rows=$(( $(wc -l < "$TMPDIR/$csv_file") - 1 ))  # subtract header
 yaml_functions=$(yq '[.functions // [] | .. | select(has("name")) | .name] | length' "$f")
 expected_rows=$(( yaml_functions + 1 ))  # +1 for root node row
@@ -56,7 +56,7 @@ f="$REPO_ROOT/example/product_breakdown.yaml"
 "$SYSTEMS_ENGINEERING" product diagram "$f" -o "$TMPDIR" 2>/dev/null || true
 stem="$(basename "${f%.*}")"
 for ext in d2 svg png md csv; do
-    output_file="${stem}_products.$ext"
+    output_file="${stem}.$ext"
     if [ -f "$TMPDIR/$output_file" ]; then
         echo "  OK: $f -> $output_file"
     else
@@ -65,7 +65,7 @@ for ext in d2 svg png md csv; do
     fi
 done
 # Check that CSV row count matches components + CIs + root.
-csv_file="${stem}_products.csv"
+csv_file="${stem}.csv"
 csv_rows=$(( $(wc -l < "$TMPDIR/$csv_file") - 1 ))  # subtract header
 yaml_components=$(yq '[.. | select(has("name")) | .name] | length' "$f")
 if [ "$csv_rows" -eq "$yaml_components" ]; then

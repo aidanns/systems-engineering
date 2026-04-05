@@ -156,7 +156,7 @@ def _emit_d2_preamble(lines: list[str], data: dict):
     lines.append("")
 
 
-def yaml_to_d2(data: dict) -> str:
+def functional_yaml_to_d2(data: dict) -> str:
     """Convert a functional decomposition YAML structure to a d2 definition."""
     lines = []
     _emit_d2_preamble(lines, data)
@@ -176,7 +176,7 @@ def yaml_to_d2(data: dict) -> str:
     return "\n".join(lines)
 
 
-def component_to_d2(component: dict, parent_id: str, lines: list[str], counter: list[int]):
+def product_component_to_d2(component: dict, parent_id: str, lines: list[str], counter: list[int]):
     """Recursively convert a component node and its children to d2 lines."""
     node_id = f"p{counter[0]}"
     counter[0] += 1
@@ -189,7 +189,7 @@ def component_to_d2(component: dict, parent_id: str, lines: list[str], counter: 
 
     if sub_components:
         for child in sub_components:
-            component_to_d2(child, node_id, lines, counter)
+            product_component_to_d2(child, node_id, lines, counter)
     if cis:
         emit_container(lines, node_id, cis, counter, prefix="p", shape="circle",
                        grid_columns=3, node_width=150, node_height=150,
@@ -204,7 +204,7 @@ def product_yaml_to_d2(data: dict) -> str:
     root_id = "root"
     counter = [0]
     for component in data.get("components", []):
-        component_to_d2(component, root_id, lines, counter)
+        product_component_to_d2(component, root_id, lines, counter)
         lines.append("")
 
     return "\n".join(lines)
@@ -324,16 +324,16 @@ def render_d2(d2_path: Path, output_path: Path):
         sys.exit(1)
 
 
-def _write_outputs(data: dict, yaml_path: Path, output_dir: Path, suffix: str,
+def _write_outputs(data: dict, yaml_path: Path, output_dir: Path,
                    to_d2: Callable[[dict], str], to_md: Callable[[dict], str],
                    to_csv: Callable[[dict], str]):
     """Generate .d2, .svg, .png, .md, and .csv output files."""
     stem = yaml_path.stem
-    d2_path = output_dir / f"{stem}_{suffix}.d2"
-    svg_path = output_dir / f"{stem}_{suffix}.svg"
-    png_path = output_dir / f"{stem}_{suffix}.png"
-    md_path = output_dir / f"{stem}_{suffix}.md"
-    csv_path = output_dir / f"{stem}_{suffix}.csv"
+    d2_path = output_dir / f"{stem}.d2"
+    svg_path = output_dir / f"{stem}.svg"
+    png_path = output_dir / f"{stem}.png"
+    md_path = output_dir / f"{stem}.md"
+    csv_path = output_dir / f"{stem}.csv"
 
     d2_path.write_text(to_d2(data))
     print(f"Written: {d2_path}")
@@ -366,14 +366,14 @@ def process_file(yaml_path: Path, output_dir: Path, root: str | None = None,
     if filters:
         data = filter_tree(data, filters, include_descendants)
 
-    _write_outputs(data, yaml_path, output_dir, "functions",
-                   yaml_to_d2, yaml_to_markdown, yaml_to_csv)
+    _write_outputs(data, yaml_path, output_dir,
+                   functional_yaml_to_d2, yaml_to_markdown, yaml_to_csv)
 
 
 def process_product_file(yaml_path: Path, output_dir: Path):
     """Process a single product breakdown YAML file: generate .d2, .svg, .png, .md, and .csv."""
     data = load_yaml(yaml_path)
-    _write_outputs(data, yaml_path, output_dir, "products",
+    _write_outputs(data, yaml_path, output_dir,
                    product_yaml_to_d2, product_yaml_to_markdown, product_yaml_to_csv)
 
 
