@@ -374,7 +374,7 @@ def main():
         "-o", "--output",
         type=Path,
         default=Path("output"),
-        help="Output directory for .d2 and .svg files (default: output/).",
+        help="Output directory for generated files (default: output/).",
     )
     function_parser.add_argument(
         "--root",
