@@ -15,13 +15,12 @@
   // ~/.claude/settings.json, ~/.claude/.credentials.json, and ~/.claude.json
   // must exist on the host. Remove any lines for files you don't have.
   "mounts": [
+    "source=claude-data,target=/home/vscode/.claude,type=volume",
+    "source=github-cli-data,target=/home/vscode/.config/gh,type=volume",
     "source=${localEnv:HOME}/.claude/CLAUDE.md,target=/home/vscode/.claude/CLAUDE.md,type=bind,readonly",
     "source=${localEnv:HOME}/.claude/settings.json,target=/home/vscode/.claude/settings.json,type=bind,readonly",
-    "source=${localEnv:HOME}/.gitconfig,target=/home/vscode/.gitconfig,type=bind,readonly",
-    "source=${localEnv:HOME}/.ssh,target=/home/vscode/.ssh,type=bind,readonly",
-    "source=${localEnv:HOME}/.config/gh,target=/home/vscode/.config/gh,type=bind,readonly",
-    // Read-write: Claude Code writes auth/session state to these files.
     "source=${localEnv:HOME}/.claude.json,target=/home/vscode/.claude.json,type=bind",
-    "source=${localEnv:HOME}/.claude/.credentials.json,target=/home/vscode/.claude/.credentials.json,type=bind"
+    "source=${localEnv:HOME}/.gitconfig,target=/home/vscode/.gitconfig,type=bind,readonly",
+    "source=${localEnv:HOME}/.ssh,target=/home/vscode/.ssh,type=bind,readonly"
   ]
 }
