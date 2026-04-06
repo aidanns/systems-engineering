@@ -41,8 +41,8 @@ scripts/build.sh
 A dev container configuration is provided in `.devcontainer/` with Python 3, Node, d2, and Claude Code pre-installed. Use it via VS Code ("Reopen in Container"), JetBrains Gateway, or the CLI:
 
 ```bash
-# Build and start the dev container
-npx devcontainer up --workspace-folder .
+# One-time setup: install devcontainer CLI, build and start the container
+scripts/setup.sh
 
 # Open a shell inside the dev container
 npx devcontainer exec --workspace-folder . bash

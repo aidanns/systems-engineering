@@ -88,8 +88,8 @@ scripts/generate.sh /path/to/output
 A dev container configuration is provided in `.devcontainer/`. It uses `mcr.microsoft.com/devcontainers/base:ubuntu` with Python 3, Node, d2, and Claude Code pre-installed.
 
 ```bash
-# Build and start the dev container
-npx devcontainer up --workspace-folder .
+# One-time setup: install devcontainer CLI, build and start the container
+scripts/setup.sh
 
 # Run a command inside the dev container
 npx devcontainer exec --workspace-folder . bash

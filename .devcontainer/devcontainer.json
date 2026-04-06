@@ -4,6 +4,8 @@
     "dockerfile": "Dockerfile"
   },
   "postCreateCommand": "scripts/build.sh",
+  // Optional: forward ANTHROPIC_API_KEY for Claude Code API key auth.
+  // Not required if using OAuth login (claude login) inside the container.
   "remoteEnv": {
     "ANTHROPIC_API_KEY": "${localEnv:ANTHROPIC_API_KEY}"
   },
