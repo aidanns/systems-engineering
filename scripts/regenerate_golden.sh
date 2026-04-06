@@ -4,7 +4,7 @@
 
 set -euo pipefail
 
-source "$(dirname "$0")/venv.sh"
+source "$(dirname "$0")/env.sh"
 GOLDEN_DIR="$REPO_ROOT/tests/golden"
 
 echo "Regenerating golden files..."

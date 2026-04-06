@@ -4,7 +4,7 @@
 
 set -euo pipefail
 
-source "$(dirname "$0")/venv.sh"
+source "$(dirname "$0")/env.sh"
 
 echo "Creating virtual environment at $VENV_DIR..."
 python3 -m venv "$VENV_DIR"

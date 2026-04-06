@@ -4,7 +4,7 @@
 
 set -euo pipefail
 
-source "$(dirname "$0")/venv.sh"
+source "$(dirname "$0")/env.sh"
 SYSTEMS_ENGINEERING="$VENV_DIR/bin/systems-engineering"
 
 if [ ! -f "$SYSTEMS_ENGINEERING" ]; then
