@@ -1,4 +1,7 @@
 #!/usr/bin/env bash
+
+# Regenerate golden files in tests/golden/ from current CLI output.
+
 set -euo pipefail
 
 source "$(dirname "$0")/venv.sh"

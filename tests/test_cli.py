@@ -14,6 +14,8 @@ from pathlib import Path
 import pytest
 import yaml
 
+# d2 embeds a version attribute in SVG output (e.g. data-d2-version="v0.7.1" on
+# macOS vs "0.7.1" on Linux). Strip it so golden comparisons are portable.
 D2_VERSION_ATTR_RE = re.compile(rb' data-d2-version="[^"]*"')
 
 

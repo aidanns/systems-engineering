@@ -1,4 +1,7 @@
 #!/usr/bin/env bash
+
+# Create a release: auto-determine version bump, run tests, commit, tag, and push.
+
 set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"

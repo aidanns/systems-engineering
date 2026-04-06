@@ -1,4 +1,7 @@
 #!/usr/bin/env bash
+
+# Create a virtualenv and install the package in editable mode.
+
 set -euo pipefail
 
 source "$(dirname "$0")/venv.sh"

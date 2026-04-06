@@ -38,7 +38,7 @@ scripts/build.sh
 
 ### Dev Container
 
-A dev container configuration is provided in `.devcontainer/` with Python 3, Node, d2, and Claude Code pre-installed. Use it via VS Code ("Reopen in Container"), JetBrains Gateway, or the CLI:
+A dev container configuration is provided in `.devcontainer/` with Python 3, d2, and Claude Code pre-installed. Use it via VS Code ("Reopen in Container"), JetBrains Gateway, or the CLI:
 
 ```bash
 # One-time setup: install devcontainer CLI, build and start the container

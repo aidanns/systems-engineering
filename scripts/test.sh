@@ -1,4 +1,7 @@
 #!/usr/bin/env bash
+
+# Run all tests: YAML validation, file generation checks, and pytest.
+
 set -euo pipefail
 
 source "$(dirname "$0")/venv.sh"

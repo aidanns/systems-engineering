@@ -85,7 +85,7 @@ scripts/generate.sh /path/to/output
 
 ## Dev Container
 
-A dev container configuration is provided in `.devcontainer/`. It uses `mcr.microsoft.com/devcontainers/base:ubuntu` with Python 3, Node, d2, and Claude Code pre-installed.
+A dev container configuration is provided in `.devcontainer/`. It uses `mcr.microsoft.com/devcontainers/base:ubuntu` with Python 3, d2, and Claude Code pre-installed.
 
 ```bash
 # One-time setup: install devcontainer CLI, build and start the container

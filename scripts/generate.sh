@@ -1,4 +1,7 @@
 #!/usr/bin/env bash
+
+# Generate all diagrams from example YAML files to the output directory.
+
 set -euo pipefail
 
 source "$(dirname "$0")/venv.sh"
