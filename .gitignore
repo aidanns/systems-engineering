@@ -1,10 +1,11 @@
 output/
 __pycache__/
 *.pyc
-.venv/
+.venv*/
 .idea/
 dist/
 build/
 *.egg-info/
 .worktrees/
 .claude/
+node_modules/

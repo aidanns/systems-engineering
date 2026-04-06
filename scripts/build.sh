@@ -1,12 +1,15 @@
 #!/usr/bin/env bash
+
+# Create a virtualenv and install the package in editable mode.
+
 set -euo pipefail
 
-REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+source "$(dirname "$0")/env.sh"
 
-echo "Creating virtual environment..."
-python3 -m venv "$REPO_ROOT/.venv"
+echo "Creating virtual environment at $VENV_DIR..."
+python3 -m venv "$VENV_DIR"
 
 echo "Installing package..."
-"$REPO_ROOT/.venv/bin/pip" install -e "$REPO_ROOT[test]"
+"$VENV_DIR/bin/pip" install -e "$REPO_ROOT[test]"
 
 echo "Build complete."

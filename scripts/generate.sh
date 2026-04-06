@@ -1,8 +1,11 @@
 #!/usr/bin/env bash
+
+# Generate all diagrams from example YAML files to the output directory.
+
 set -euo pipefail
 
-REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
-SYSTEMS_ENGINEERING="$REPO_ROOT/.venv/bin/systems-engineering"
+source "$(dirname "$0")/env.sh"
+SYSTEMS_ENGINEERING="$VENV_DIR/bin/systems-engineering"
 
 if [ ! -f "$SYSTEMS_ENGINEERING" ]; then
     echo "Error: systems-engineering CLI not found in virtualenv. Run scripts/build.sh first." >&2

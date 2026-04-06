@@ -36,6 +36,18 @@ Requires a `HOMEBREW_GITHUB_API_TOKEN` environment variable with a GitHub person
 scripts/build.sh
 ```
 
+### Dev Container
+
+A dev container configuration is provided in `.devcontainer/` with Python 3, d2, and Claude Code pre-installed. Use it via VS Code ("Reopen in Container"), JetBrains Gateway, or the CLI:
+
+```bash
+# One-time setup: install devcontainer CLI, build and start the container
+scripts/setup.sh
+
+# Open a shell inside the dev container
+npx devcontainer exec --workspace-folder . bash
+```
+
 ## Usage
 
 Check the installed version:

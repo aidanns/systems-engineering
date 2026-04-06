@@ -66,28 +66,43 @@ scripts/generate.sh
 scripts/generate.sh /path/to/output
 
 # Generate diagrams from a single file (direct)
-.venv/bin/systems-engineering function example/functional_decomposition.yaml -o output/
+.venv-$(uname -s)-$(uname -m)/bin/systems-engineering function example/functional_decomposition.yaml -o output/
 
 # Generate diagrams from all files in a directory
-.venv/bin/systems-engineering function example/ -o output/
+.venv-$(uname -s)-$(uname -m)/bin/systems-engineering function example/ -o output/
 
 # Generate product breakdown diagrams from a single file
-.venv/bin/systems-engineering product diagram product_breakdown/example.yaml -o output/
+.venv-$(uname -s)-$(uname -m)/bin/systems-engineering product diagram product_breakdown/example.yaml -o output/
 
 # Verify all leaf functions are allocated to configuration items
-.venv/bin/systems-engineering product verify \
+.venv-$(uname -s)-$(uname -m)/bin/systems-engineering product verify \
     -p example/product_breakdown.yaml \
     -f example/functional_decomposition.yaml
 
 # Verify using directory mode (finds matching files automatically)
-.venv/bin/systems-engineering product verify -p example/ -f example/
+.venv-$(uname -s)-$(uname -m)/bin/systems-engineering product verify -p example/ -f example/
 ```
+
+## Dev Container
+
+A dev container configuration is provided in `.devcontainer/`. It uses `mcr.microsoft.com/devcontainers/base:ubuntu` with Python 3, d2, and Claude Code pre-installed.
+
+```bash
+# One-time setup: install devcontainer CLI, build and start the container
+scripts/setup.sh
+
+# Run a command inside the dev container
+npx devcontainer exec --workspace-folder . bash
+```
+
+The dev container can also be opened directly from VS Code ("Reopen in Container") or JetBrains Gateway.
 
 ## Dependencies
 
 - Python 3.10+
 - d2 (must be on PATH)
 - pyyaml
+- Node.js (for devcontainer CLI, dev dependency)
 
 ## Conventions
 
@@ -95,7 +110,7 @@ scripts/generate.sh /path/to/output
 - All bash scripts in `scripts/` must be portable across macOS and Linux.
 - Before finishing work, confirm that `scripts/build.sh`, `scripts/test.sh`, and `scripts/generate.sh` all run successfully.
 - When adding new output types or changing output format, regenerate and commit updated golden files in `tests/golden/` so changes are reviewable during PR review.
-- Keep `design/functions.yaml` up to date as new functionality is added to the CLI. Regenerate with: `.venv/bin/systems-engineering function design/functions.yaml -o design/`
+- Keep `design/functions.yaml` up to date as new functionality is added to the CLI. Regenerate with: `.venv-$(uname -s)-$(uname -m)/bin/systems-engineering function design/functions.yaml -o design/`
 - Before finishing implementation work, check that `README.md` is consistent with the current functionality. Update it if new features, flags, or commands have been added.
 
 ## Releasing

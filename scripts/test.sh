@@ -1,15 +1,18 @@
 #!/usr/bin/env bash
+
+# Run all tests: YAML validation, file generation checks, and pytest.
+
 set -euo pipefail
 
-REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
-SYSTEMS_ENGINEERING="$REPO_ROOT/.venv/bin/systems-engineering"
+source "$(dirname "$0")/env.sh"
+SYSTEMS_ENGINEERING="$VENV_DIR/bin/systems-engineering"
 
 if [ ! -f "$SYSTEMS_ENGINEERING" ]; then
     echo "Error: systems-engineering CLI not found in virtualenv. Run scripts/build.sh first." >&2
     exit 1
 fi
 
-PYTHON="$REPO_ROOT/.venv/bin/python"
+PYTHON="$VENV_DIR/bin/python"
 
 echo "Checking YAML files parse correctly..."
 f="$REPO_ROOT/example/functional_decomposition.yaml"
@@ -76,6 +79,6 @@ else
 fi
 
 echo "Running pytest..."
-"$REPO_ROOT/.venv/bin/pytest" "$REPO_ROOT/tests/" -v
+"$VENV_DIR/bin/pytest" "$REPO_ROOT/tests/" -v
 
 echo "All tests passed."
