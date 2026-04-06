@@ -1,26 +1,5 @@
 {
-  "name": "systems-engineering-diagrams",
-  "version": "1.0.0",
-  "description": "Tools for generating systems engineering diagrams from structured data definitions.",
-  "main": "index.js",
-  "directories": {
-    "example": "example",
-    "test": "tests"
-  },
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/aidanns/systems-engineering-diagrams.git"
-  },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "bugs": {
-    "url": "https://github.com/aidanns/systems-engineering-diagrams/issues"
-  },
-  "homepage": "https://github.com/aidanns/systems-engineering-diagrams#readme",
+  "private": true,
   "devDependencies": {
     "@devcontainers/cli": "^0.85.0"
   }

@@ -7,11 +7,15 @@
   "remoteEnv": {
     "ANTHROPIC_API_KEY": "${localEnv:ANTHROPIC_API_KEY}"
   },
+  // Bind mounts for Claude Code and git configuration from the host.
+  // Prerequisites: ~/.gitconfig, ~/.ssh, ~/.claude/CLAUDE.md, ~/.claude/settings.json,
+  // and ~/.claude.json must exist on the host. Remove any lines for files you don't have.
   "mounts": [
     "source=${localEnv:HOME}/.claude/CLAUDE.md,target=/home/vscode/.claude/CLAUDE.md,type=bind,readonly",
     "source=${localEnv:HOME}/.claude/settings.json,target=/home/vscode/.claude/settings.json,type=bind,readonly",
     "source=${localEnv:HOME}/.gitconfig,target=/home/vscode/.gitconfig,type=bind,readonly",
     "source=${localEnv:HOME}/.ssh,target=/home/vscode/.ssh,type=bind,readonly",
+    // Read-write: Claude Code writes auth/session state to this file.
     "source=${localEnv:HOME}/.claude.json,target=/home/vscode/.claude.json,type=bind"
   ]
 }
