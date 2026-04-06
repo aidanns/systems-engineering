@@ -14,6 +14,14 @@ from pathlib import Path
 import pytest
 import yaml
 
+D2_VERSION_ATTR_RE = re.compile(rb' data-d2-version="[^"]*"')
+
+
+def strip_d2_version(svg_bytes: bytes) -> bytes:
+    """Remove the data-d2-version attribute from SVG content for comparison."""
+    return D2_VERSION_ATTR_RE.sub(b"", svg_bytes)
+
+
 from systems_engineering.cli import (
     collect_allocated_functions,
     collect_leaf_function_names,
@@ -330,8 +338,8 @@ class TestGoldenFiles:
 
     @pytest.mark.skipif(not HAS_D2, reason="d2 not installed")
     def test_svg_matches_golden(self, generated_output):
-        generated = (generated_output / "functional_decomposition.svg").read_bytes()
-        golden = (GOLDEN_DIR / "functional_decomposition.svg").read_bytes()
+        generated = strip_d2_version((generated_output / "functional_decomposition.svg").read_bytes())
+        golden = strip_d2_version((GOLDEN_DIR / "functional_decomposition.svg").read_bytes())
         assert generated == golden, "SVG output does not match golden file"
 
     @pytest.mark.skipif(not HAS_D2, reason="d2 not installed")
@@ -366,8 +374,8 @@ class TestProductGoldenFiles:
 
     @pytest.mark.skipif(not HAS_D2, reason="d2 not installed")
     def test_svg_matches_golden(self, generated_product_output):
-        generated = (generated_product_output / "product_breakdown.svg").read_bytes()
-        golden = (GOLDEN_DIR / "product_breakdown.svg").read_bytes()
+        generated = strip_d2_version((generated_product_output / "product_breakdown.svg").read_bytes())
+        golden = strip_d2_version((GOLDEN_DIR / "product_breakdown.svg").read_bytes())
         assert generated == golden, "Product SVG output does not match golden file"
 
     @pytest.mark.skipif(not HAS_D2, reason="d2 not installed")
