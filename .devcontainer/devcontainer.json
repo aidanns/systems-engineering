@@ -9,10 +9,10 @@
   "remoteEnv": {
     "ANTHROPIC_API_KEY": "${localEnv:ANTHROPIC_API_KEY}"
   },
-  // TODO(aidanns): Make bind mounts more portable so missing host files don't prevent startup.
-  // Bind mounts for Claude Code and git configuration from the host.
-  // Prerequisites: ~/.gitconfig, ~/.ssh, ~/.config/gh, ~/.claude/CLAUDE.md,
-  // ~/.claude/settings.json, ~/.claude/.credentials.json, and ~/.claude.json
+  // Named volumes persist Claude Code and GitHub CLI auth across rebuilds.
+  // Bind mounts layer host config on top of the volumes.
+  // Prerequisites: ~/.gitconfig, ~/.ssh, ~/.claude/CLAUDE.md,
+  // ~/.claude/settings.json, and ~/.claude.json
   // must exist on the host. Remove any lines for files you don't have.
   "mounts": [
     "source=claude-data,target=/home/vscode/.claude,type=volume",
