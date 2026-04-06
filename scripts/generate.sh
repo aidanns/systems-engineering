@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
-SYSTEMS_ENGINEERING="$REPO_ROOT/.venv/bin/systems-engineering"
+source "$(dirname "$0")/venv.sh"
+SYSTEMS_ENGINEERING="$VENV_DIR/bin/systems-engineering"
 
 if [ ! -f "$SYSTEMS_ENGINEERING" ]; then
     echo "Error: systems-engineering CLI not found in virtualenv. Run scripts/build.sh first." >&2

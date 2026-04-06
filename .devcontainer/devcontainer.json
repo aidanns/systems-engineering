@@ -8,9 +8,10 @@
     "ANTHROPIC_API_KEY": "${localEnv:ANTHROPIC_API_KEY}"
   },
   "mounts": [
-    "source=${localEnv:HOME}/.claude/CLAUDE.md,target=/home/codespace/.claude/CLAUDE.md,type=bind,readonly",
-    "source=${localEnv:HOME}/.claude/settings.json,target=/home/codespace/.claude/settings.json,type=bind,readonly",
-    "source=${localEnv:HOME}/.gitconfig,target=/home/codespace/.gitconfig,type=bind,readonly",
-    "source=${localEnv:HOME}/.ssh,target=/home/codespace/.ssh,type=bind,readonly"
+    "source=${localEnv:HOME}/.claude/CLAUDE.md,target=/home/vscode/.claude/CLAUDE.md,type=bind,readonly",
+    "source=${localEnv:HOME}/.claude/settings.json,target=/home/vscode/.claude/settings.json,type=bind,readonly",
+    "source=${localEnv:HOME}/.gitconfig,target=/home/vscode/.gitconfig,type=bind,readonly",
+    "source=${localEnv:HOME}/.ssh,target=/home/vscode/.ssh,type=bind,readonly",
+    "source=${localEnv:HOME}/.claude.json,target=/home/vscode/.claude.json,type=bind"
   ]
 }
