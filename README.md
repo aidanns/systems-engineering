@@ -50,7 +50,7 @@ npx devcontainer exec --workspace-folder . bash
 
 #### Host notifications
 
-Claude Code's notification and stop hooks rely on host-only tools (`terminal-notifier`, iTerm, etc.) and don't fire from inside the container. To bridge them, the devcontainer's `initializeCommand` starts [`dev-notify-bridge`](https://www.npmjs.com/package/dev-notify-bridge) on the host (via `npx`, requires `node`/`npx` on the host PATH — already a prerequisite for the devcontainer CLI). The container's Notification and Stop hooks are wired by `postCreateCommand` to POST to `http://host.docker.internal:6789/notify`, producing native macOS notifications titled `Claude Code — <repo>`. Logs are at `~/Library/Logs/dev-notify-bridge.log`.
+Claude Code's notification and stop hooks rely on host-only tools (`terminal-notifier`, iTerm, etc.) and don't fire from inside the container. To bridge them, the devcontainer's `initializeCommand` starts [`dev-notify-bridge`](https://www.npmjs.com/package/dev-notify-bridge) on the host (via `npx`, requires `node`/`npx` on the host PATH — already a prerequisite for the devcontainer CLI). The container's Notification and Stop hooks are wired by `postCreateCommand` to POST to `http://host.docker.internal:6789/notify`, producing native macOS notifications titled `Claude Code — <repo>`. Logs are at `.devcontainer/dev-notify-bridge-logs/dev-notify-bridge.log`.
 
 ## Usage
 

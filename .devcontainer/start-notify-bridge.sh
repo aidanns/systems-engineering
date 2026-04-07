@@ -5,7 +5,8 @@
 set -euo pipefail
 
 PORT=6789
-LOG_DIR="${HOME}/Library/Logs"
+SCRIPT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
+LOG_DIR="${SCRIPT_DIR}/dev-notify-bridge-logs"
 LOG_FILE="${LOG_DIR}/dev-notify-bridge.log"
 
 if lsof -nP -iTCP:"${PORT}" -sTCP:LISTEN >/dev/null 2>&1; then
