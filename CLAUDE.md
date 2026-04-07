@@ -115,8 +115,9 @@ The dev container can also be opened directly from VS Code ("Reopen in Container
 
 ## Development Workflow
 
+- Before commencing development, pull the latest changes from GitHub so work begins from the tip of `main`.
 - New features must be developed in a git worktree.
-- The worktree must use a branch named `feature/[Feature Name]`.
+- The worktree must use a branch named `feature/[Feature Name]` based on the tip of `main`.
 - After changes are made, commit them to the feature branch, push the branch to GitHub, and open a pull request from the feature branch into `main`.
 
 ## Releasing
