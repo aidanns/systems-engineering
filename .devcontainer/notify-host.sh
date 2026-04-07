@@ -10,7 +10,7 @@ if [ -n "${1:-}" ]; then
   MESSAGE=$1
 fi
 if [ -z "${MESSAGE}" ]; then
-  MESSAGE="Claude Code event"
+  MESSAGE="Response finished, ready for more input."
 fi
 
 TITLE="Claude Code"
