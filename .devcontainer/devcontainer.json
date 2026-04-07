@@ -1,5 +1,5 @@
 {
-  "name": "systems-engineering-diagrams",
+  "name": "systems-engineering",
   "build": {
     "dockerfile": "Dockerfile"
   },
