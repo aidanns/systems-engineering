@@ -116,8 +116,12 @@ The dev container can also be opened directly from VS Code ("Reopen in Container
 ## Development Workflow
 
 - Before commencing development, pull the latest changes from GitHub so work begins from the tip of `main`.
-- New features must be developed in a git worktree.
-- The worktree must use a branch named `feature/[Feature Name]` based on the tip of `main`.
+- New features must be developed in a git worktree:
+  - Use the built-in `EnterWorktree` tool (while on `main`) rather than running `git worktree add` manually. It creates the worktree under `.claude/worktrees/` and switches the session into it.
+  - Use `ExitWorktree` when finished. Pass `action: "keep"` to preserve the work or `action: "remove"` for a clean teardown (use `discard_changes: true` to force-remove a worktree with uncommitted changes).
+  - For isolated parallel work, prefer `Agent(..., isolation: "worktree")` to spawn a subagent in its own throwaway worktree.
+- The worktree must use a branch named `feature/[feature-name]` (kebab-case) based on the tip of `main`.
+- The worktree directory must be named `[feature-name]` (matching the branch suffix), located at `.claude/worktrees/[feature-name]`. For example, branch `feature/configure-dotfiles` lives in `.claude/worktrees/configure-dotfiles`.
 - After changes are made, commit them to the feature branch, push the branch to GitHub, and open a pull request from the feature branch into `main`.
 
 ## Releasing
