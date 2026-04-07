@@ -2,6 +2,7 @@ FROM mcr.microsoft.com/devcontainers/base:ubuntu
 
 RUN apt-get update && apt-get install -y \
     python3 python3-venv python3-pip \
+    vim \
     # Required by d2's bundled Playwright/Chromium for PNG rendering
     libasound2t64 libatk-bridge2.0-0t64 libatk1.0-0t64 libatspi2.0-0t64 \
     libcairo2 libcups2t64 libdbus-1-3 libdrm2 libgbm1 libglib2.0-0t64 \
