@@ -113,6 +113,12 @@ The dev container can also be opened directly from VS Code ("Reopen in Container
 - Keep `design/functions.yaml` up to date as new functionality is added to the CLI. Regenerate with: `.venv-$(uname -s)-$(uname -m)/bin/systems-engineering function design/functions.yaml -o design/`
 - Before finishing implementation work, check that `README.md` is consistent with the current functionality. Update it if new features, flags, or commands have been added.
 
+## Development Workflow
+
+- New features must be developed in a git worktree.
+- The worktree must use a branch named `feature/[Feature Name]`.
+- After changes are made, commit them to the feature branch, push the branch to GitHub, and open a pull request from the feature branch into `main`.
+
 ## Releasing
 
 - Run `scripts/release.sh` to create a release. Pass `--yes` to skip the confirmation prompt. It auto-determines the version bump from conventional commit messages (breaking → major, feat → minor, other → patch).
