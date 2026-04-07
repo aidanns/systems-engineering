@@ -3,7 +3,8 @@
   "build": {
     "dockerfile": "Dockerfile"
   },
-  "postCreateCommand": "scripts/build.sh",
+  "initializeCommand": ".devcontainer/start-notify-bridge.sh",
+  "postCreateCommand": "scripts/build.sh && .devcontainer/install-claude-hooks.sh",
   // Optional: forward ANTHROPIC_API_KEY for Claude Code API key auth.
   // Not required if using OAuth login (claude login) inside the container.
   "remoteEnv": {
