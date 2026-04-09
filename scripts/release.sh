@@ -112,6 +112,19 @@ echo "Pushing to origin..."
 git push origin main --tags
 
 echo ""
+echo "Creating GitHub Release..."
+if command -v gh >/dev/null 2>&1; then
+    gh release create "$new_tag" \
+        --title "$new_tag" \
+        --generate-notes \
+        --notes-start-tag "$latest_tag" \
+        --latest
+else
+    echo "Warning: gh CLI not found; skipping GitHub Release creation."
+    echo "Create it manually at https://github.com/aidanns/systems-engineering/releases/new?tag=$new_tag"
+fi
+
+echo ""
 echo "Release $new_tag complete."
 echo ""
 echo "Next steps:"
