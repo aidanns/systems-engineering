@@ -86,19 +86,19 @@ functions:
 
 ```bash
 # Render a single file
-systems-engineering function example/functional_decomposition.yaml -o output/
+systems-engineering function diagram example/functional_decomposition.yaml -o output/
 
 # Render all files in a directory
-systems-engineering function example/ -o output/
+systems-engineering function diagram example/ -o output/
 
 # Render a subtree rooted at a specific function
-systems-engineering function example/functional_decomposition.yaml -o output/ --root "Function A"
+systems-engineering function diagram example/functional_decomposition.yaml -o output/ --root "Function A"
 
 # Filter to functions matching a regex (case-insensitive, repeatable)
-systems-engineering function example/functional_decomposition.yaml -o output/ --filter "function"
+systems-engineering function diagram example/functional_decomposition.yaml -o output/ --filter "function"
 
 # Include all descendants of matched functions
-systems-engineering function example/functional_decomposition.yaml -o output/ --filter "function" --include-descendants
+systems-engineering function diagram example/functional_decomposition.yaml -o output/ --filter "function" --include-descendants
 ```
 
 This produces `.d2`, `.svg`, `.png`, `.md`, and `.csv` files in the output directory.

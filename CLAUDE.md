@@ -66,10 +66,10 @@ scripts/generate.sh
 scripts/generate.sh /path/to/output
 
 # Generate diagrams from a single file (direct)
-.venv-$(uname -s)-$(uname -m)/bin/systems-engineering function example/functional_decomposition.yaml -o output/
+.venv-$(uname -s)-$(uname -m)/bin/systems-engineering function diagram example/functional_decomposition.yaml -o output/
 
 # Generate diagrams from all files in a directory
-.venv-$(uname -s)-$(uname -m)/bin/systems-engineering function example/ -o output/
+.venv-$(uname -s)-$(uname -m)/bin/systems-engineering function diagram example/ -o output/
 
 # Generate product breakdown diagrams from a single file
 .venv-$(uname -s)-$(uname -m)/bin/systems-engineering product diagram product_breakdown/example.yaml -o output/
@@ -110,7 +110,7 @@ The dev container can also be opened directly from VS Code ("Reopen in Container
 - All bash scripts in `scripts/` must be portable across macOS and Linux.
 - Before finishing work, confirm that `scripts/build.sh`, `scripts/test.sh`, and `scripts/generate.sh` all run successfully.
 - When adding new output types or changing output format, regenerate and commit updated golden files in `tests/golden/` so changes are reviewable during PR review.
-- Keep `design/functions.yaml` up to date as new functionality is added to the CLI. Regenerate with: `.venv-$(uname -s)-$(uname -m)/bin/systems-engineering function design/functions.yaml -o design/`
+- Keep `design/functions.yaml` up to date as new functionality is added to the CLI. Regenerate with: `.venv-$(uname -s)-$(uname -m)/bin/systems-engineering function diagram design/functions.yaml -o design/`
 - Keep `design/product_breakdown.yaml` up to date when components or dependencies change. Regenerate with: `.venv-$(uname -s)-$(uname -m)/bin/systems-engineering product diagram design/product_breakdown.yaml -o design/`
 - Before finishing implementation work, check that `README.md` is consistent with the current functionality. Update it if new features, flags, or commands have been added.
 

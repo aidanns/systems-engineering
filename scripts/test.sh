@@ -36,7 +36,7 @@ echo "Checking file generation..."
 TMPDIR="$(mktemp -d)"
 trap 'rm -rf "$TMPDIR"' EXIT
 f="$REPO_ROOT/example/functional_decomposition.yaml"
-"$SYSTEMS_ENGINEERING" function "$f" -o "$TMPDIR" 2>/dev/null || true
+"$SYSTEMS_ENGINEERING" function diagram "$f" -o "$TMPDIR" 2>/dev/null || true
 stem="$(basename "${f%.*}")"
 for ext in d2 svg png md csv; do
     output_file="${stem}.$ext"
