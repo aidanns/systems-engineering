@@ -128,7 +128,7 @@ The dev container can also be opened directly from VS Code ("Reopen in Container
   - For isolated parallel work, prefer `Agent(..., isolation: "worktree")` to spawn a subagent in its own throwaway worktree.
 - The worktree must use a branch named `feature/[feature-name]` (kebab-case) based on the tip of `main`.
 - The worktree directory must be named `[feature-name]` (matching the branch suffix), located at `.claude/worktrees/[feature-name]`. For example, branch `feature/configure-dotfiles` lives in `.claude/worktrees/configure-dotfiles`.
-- After changes are made, commit them to the feature branch, push the branch to GitHub, and open a pull request from the feature branch into `main`.
+- After changes are made, commit them to the feature branch, push the branch to GitHub, and open a pull request from the feature branch into `main`. Print the PR URL in the chat after opening it so the user can click through.
 
 ## Releasing
 
