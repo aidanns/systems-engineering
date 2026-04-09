@@ -278,6 +278,56 @@ class TestPngOutput:
         assert self.png_path.stat().st_size > 1024
 
 
+# --- Function diagram CLI tests ---
+
+
+class TestFunctionDiagramCLI:
+    def test_function_diagram_subcommand(self, tmp_path):
+        cli_path = Path(sys.executable).parent / "systems-engineering"
+        result = subprocess.run(
+            [str(cli_path), "function", "diagram",
+             str(EXAMPLE_YAML), "-o", str(tmp_path)],
+            capture_output=True, text=True,
+        )
+        assert result.returncode == 0
+        assert (tmp_path / "functional_decomposition.d2").exists()
+        assert (tmp_path / "functional_decomposition.md").exists()
+        assert (tmp_path / "functional_decomposition.csv").exists()
+
+    def test_function_diagram_nonexistent_input(self, tmp_path):
+        cli_path = Path(sys.executable).parent / "systems-engineering"
+        result = subprocess.run(
+            [str(cli_path), "function", "diagram",
+             str(tmp_path / "nonexistent.yaml"), "-o", str(tmp_path)],
+            capture_output=True, text=True,
+        )
+        assert result.returncode != 0
+
+    def test_function_diagram_directory_input(self, tmp_path):
+        cli_path = Path(sys.executable).parent / "systems-engineering"
+        fn_dir = REPO_ROOT / "example"
+        result = subprocess.run(
+            [str(cli_path), "function", "diagram",
+             str(fn_dir), "-o", str(tmp_path)],
+            capture_output=True, text=True,
+        )
+        assert result.returncode == 0
+        assert (tmp_path / "functional_decomposition.d2").exists()
+
+    def test_bare_function_form_is_rejected(self, tmp_path):
+        """Regression test: the pre-v2.0.0 `function <yaml>` bare form was removed
+        when function/product command shapes were unified. Invoking without the
+        `diagram` subcommand must fail so users aren't silently running a command
+        that no longer exists."""
+        cli_path = Path(sys.executable).parent / "systems-engineering"
+        result = subprocess.run(
+            [str(cli_path), "function", str(EXAMPLE_YAML), "-o", str(tmp_path)],
+            capture_output=True, text=True,
+        )
+        assert result.returncode != 0
+        assert "invalid choice" in result.stderr
+
+
 # --- Product diagram CLI tests ---
 
 
