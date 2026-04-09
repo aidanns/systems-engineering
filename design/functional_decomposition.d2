@@ -9,10 +9,10 @@ vars: {
 direction: down
 
 root: Systems Engineering CLI
-root.width: 250
+root.width: 400
 
 f0: Input Processing
-f0.width: 250
+f0.width: 400
 root -> f0
 f0_container: "" {
   grid-columns: 1
@@ -23,16 +23,16 @@ f0_container: "" {
     fill: transparent
   }
   f1: Load YAML
-  f1.width: 250
+  f1.width: 400
   f2: Find Subtree
-  f2.width: 250
+  f2.width: 400
   f3: Filter Tree
-  f3.width: 250
+  f3.width: 400
 }
 f0 -> f0_container
 
 f4: Output Generation
-f4.width: 250
+f4.width: 400
 root -> f4
 f4_container: "" {
   grid-columns: 1
@@ -43,25 +43,25 @@ f4_container: "" {
     fill: transparent
   }
   f5: Generate Functional D2
-  f5.width: 250
+  f5.width: 400
   f6: Generate Functional Markdown
-  f6.width: 250
+  f6.width: 400
   f7: Generate Functional CSV
-  f7.width: 250
+  f7.width: 400
   f8: Generate Product D2
-  f8.width: 250
+  f8.width: 400
   f8.style.stroke: red
   f9: Generate Product Markdown
-  f9.width: 250
+  f9.width: 400
   f9.style.stroke: red
   f10: Generate Product CSV
-  f10.width: 250
+  f10.width: 400
   f10.style.stroke: red
 }
 f4 -> f4_container
 
 f11: Rendering
-f11.width: 250
+f11.width: 400
 root -> f11
 f11_container: "" {
   grid-columns: 1
@@ -72,14 +72,14 @@ f11_container: "" {
     fill: transparent
   }
   f12: Render SVG
-  f12.width: 250
+  f12.width: 400
   f13: Render PNG
-  f13.width: 250
+  f13.width: 400
 }
 f11 -> f11_container
 
 f14: Verification
-f14.width: 250
+f14.width: 400
 f14.style.stroke: red
 root -> f14
 f14_container: "" {
@@ -91,13 +91,13 @@ f14_container: "" {
     fill: transparent
   }
   f15: Verify Function Allocation
-  f15.width: 250
+  f15.width: 400
   f15.style.stroke: red
 }
 f14 -> f14_container
 
 f16: CLI Interface
-f16.width: 250
+f16.width: 400
 root -> f16
 f16_container: "" {
   grid-columns: 1
@@ -108,8 +108,8 @@ f16_container: "" {
     fill: transparent
   }
   f17: Argument Parsing
-  f17.width: 250
+  f17.width: 400
   f18: File Processing
-  f18.width: 250
+  f18.width: 400
 }
 f16 -> f16_container
