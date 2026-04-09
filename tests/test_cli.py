@@ -97,7 +97,7 @@ class TestD2Output:
 
     def test_root_node(self):
         assert "root: Example System" in self.d2
-        assert "root.width: 250" in self.d2
+        assert "root.width: 400" in self.d2
 
     def test_all_function_names_present(self, all_functions):
         for _, func in all_functions:
@@ -145,7 +145,7 @@ class TestD2Output:
                     assert "fill: transparent" in container_lines
 
     def test_all_nodes_have_width(self, all_functions):
-        width_lines = re.findall(r"f\d+\.width: 250", self.d2)
+        width_lines = re.findall(r"f\d+\.width: 400", self.d2)
         assert len(width_lines) == len(all_functions)
 
     def test_root_with_all_leaf_children_uses_container(self, example_data):
@@ -276,6 +276,56 @@ class TestPngOutput:
 
     def test_file_size_nontrivial(self):
         assert self.png_path.stat().st_size > 1024
+
+
+# --- Function diagram CLI tests ---
+
+
+class TestFunctionDiagramCLI:
+    def test_function_diagram_subcommand(self, tmp_path):
+        cli_path = Path(sys.executable).parent / "systems-engineering"
+        result = subprocess.run(
+            [str(cli_path), "function", "diagram",
+             str(EXAMPLE_YAML), "-o", str(tmp_path)],
+            capture_output=True, text=True,
+        )
+        assert result.returncode == 0
+        assert (tmp_path / "functional_decomposition.d2").exists()
+        assert (tmp_path / "functional_decomposition.md").exists()
+        assert (tmp_path / "functional_decomposition.csv").exists()
+
+    def test_function_diagram_nonexistent_input(self, tmp_path):
+        cli_path = Path(sys.executable).parent / "systems-engineering"
+        result = subprocess.run(
+            [str(cli_path), "function", "diagram",
+             str(tmp_path / "nonexistent.yaml"), "-o", str(tmp_path)],
+            capture_output=True, text=True,
+        )
+        assert result.returncode != 0
+
+    def test_function_diagram_directory_input(self, tmp_path):
+        cli_path = Path(sys.executable).parent / "systems-engineering"
+        fn_dir = REPO_ROOT / "example"
+        result = subprocess.run(
+            [str(cli_path), "function", "diagram",
+             str(fn_dir), "-o", str(tmp_path)],
+            capture_output=True, text=True,
+        )
+        assert result.returncode == 0
+        assert (tmp_path / "functional_decomposition.d2").exists()
+
+    def test_bare_function_form_is_rejected(self, tmp_path):
+        """Regression test: the pre-v2.0.0 `function <yaml>` bare form was removed
+        when function/product command shapes were unified. Invoking without the
+        `diagram` subcommand must fail so users aren't silently running a command
+        that no longer exists."""
+        cli_path = Path(sys.executable).parent / "systems-engineering"
+        result = subprocess.run(
+            [str(cli_path), "function", str(EXAMPLE_YAML), "-o", str(tmp_path)],
+            capture_output=True, text=True,
+        )
+        assert result.returncode != 0
+        assert "invalid choice" in result.stderr
 
 
 # --- Product diagram CLI tests ---
@@ -737,7 +787,7 @@ class TestProductD2Output:
 
     def test_root_node(self):
         assert "root: Example System" in self.d2
-        assert "root.width: 250" in self.d2
+        assert "root.width: 400" in self.d2
 
     def test_all_component_names_present(self):
         for name in ["Power Subsystem", "Thermal Subsystem", "Data Subsystem"]:
@@ -797,9 +847,9 @@ class TestProductD2Output:
         assert len(ci_width_lines) == 8  # 8 CIs
         assert len(ci_height_lines) == 8
 
-    def test_component_nodes_have_width_250(self):
-        # 3 components should have width 250
-        comp_width_lines = re.findall(r"p\d+\.width: 250", self.d2)
+    def test_component_nodes_have_width_400(self):
+        # 3 components should have width 400
+        comp_width_lines = re.findall(r"p\d+\.width: 400", self.d2)
         assert len(comp_width_lines) == 3
 
     def test_ci_labels_use_escaped_newlines(self):

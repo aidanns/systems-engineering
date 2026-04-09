@@ -9,10 +9,10 @@ vars: {
 direction: down
 
 root: Example System
-root.width: 250
+root.width: 400
 
 f0: Power Management
-f0.width: 250
+f0.width: 400
 root -> f0
 f0_container: "" {
   grid-columns: 1
@@ -23,17 +23,17 @@ f0_container: "" {
     fill: transparent
   }
   f1: Generate Power
-  f1.width: 250
+  f1.width: 400
   f2: Store Power
-  f2.width: 250
+  f2.width: 400
   f2.style.stroke: red
   f3: Distribute Power
-  f3.width: 250
+  f3.width: 400
 }
 f0 -> f0_container
 
 f4: Thermal Management
-f4.width: 250
+f4.width: 400
 f4.style.stroke: red
 root -> f4
 f4_container: "" {
@@ -45,15 +45,15 @@ f4_container: "" {
     fill: transparent
   }
   f5: Detect Temperature
-  f5.width: 250
+  f5.width: 400
   f6: Cool Components
-  f6.width: 250
+  f6.width: 400
   f6.style.stroke: red
 }
 f4 -> f4_container
 
 f7: Data Processing
-f7.width: 250
+f7.width: 400
 root -> f7
 f7_container: "" {
   grid-columns: 1
@@ -64,10 +64,10 @@ f7_container: "" {
     fill: transparent
   }
   f8: Collect Data
-  f8.width: 250
+  f8.width: 400
   f9: Transform Data
-  f9.width: 250
+  f9.width: 400
   f10: Store Data
-  f10.width: 250
+  f10.width: 400
 }
 f7 -> f7_container

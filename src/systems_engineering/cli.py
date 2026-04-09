@@ -85,7 +85,7 @@ def is_leaf(function: dict) -> bool:
 
 
 def emit_node(lines: list[str], node_id: str, node: dict, indent: str = "",
-              shape: str | None = None, width: int = 250, height: int | None = None,
+              shape: str | None = None, width: int = 400, height: int | None = None,
               newline_spaces: bool = False):
     """Emit d2 lines for a single labeled node."""
     label = node['name'].replace(' ', r'\n') if newline_spaces else node['name']
@@ -101,7 +101,7 @@ def emit_node(lines: list[str], node_id: str, node: dict, indent: str = "",
 
 def emit_container(lines: list[str], parent_id: str, children: list[dict],
                    counter: list[int], prefix: str = "f", shape: str | None = None,
-                   grid_columns: int = 1, node_width: int = 250,
+                   grid_columns: int = 1, node_width: int = 400,
                    node_height: int | None = None, newline_spaces: bool = False):
     """Emit a grid container holding child nodes, connected to the parent node."""
     container_id = f"{parent_id}_container"
@@ -503,44 +503,53 @@ def main():
     )
     subparsers = parser.add_subparsers(dest="command", required=True)
 
-    # 'function' subcommand
+    # 'function' subcommand group
     function_parser = subparsers.add_parser(
         "function",
+        help="Functional decomposition commands.",
+    )
+    function_subparsers = function_parser.add_subparsers(
+        dest="function_command", required=True
+    )
+
+    # 'function diagram' subcommand
+    function_diagram_parser = function_subparsers.add_parser(
+        "diagram",
         help="Generate functional decomposition diagrams.",
     )
-    function_parser.add_argument(
+    function_diagram_parser.add_argument(
         "input",
         type=Path,
         help="YAML file or directory (expects functional_decomposition.yaml).",
     )
-    function_parser.add_argument(
+    function_diagram_parser.add_argument(
         "-o", "--output",
         type=Path,
         default=Path("output"),
         help="Output directory for generated files (default: output/).",
     )
-    function_parser.add_argument(
+    function_diagram_parser.add_argument(
         "--root",
         type=str,
         default=None,
         help="Name of the function to use as the root of the output tree.",
     )
-    function_parser.add_argument(
+    function_diagram_parser.add_argument(
         "--filter",
         action="append",
         default=None,
         help="Regex pattern to filter functions by name (repeatable). "
              "Matches as substring by default; use anchors for exact match.",
     )
-    function_parser.add_argument(
+    function_diagram_parser.add_argument(
         "--include-descendants",
         action="store_true",
         default=False,
         help="When filtering, include all descendants of matched functions.",
     )
-    function_parser.set_defaults(func=run_function_command)
+    function_diagram_parser.set_defaults(func=run_function_command)
 
-    # 'product' subcommand
+    # 'product' subcommand group
     product_parser = subparsers.add_parser(
         "product",
         help="Product breakdown commands.",
@@ -549,42 +558,42 @@ def main():
         dest="product_command", required=True
     )
 
+    # 'product diagram' subcommand
+    product_diagram_parser = product_subparsers.add_parser(
+        "diagram",
+        help="Generate product breakdown diagrams.",
+    )
+    product_diagram_parser.add_argument(
+        "input",
+        type=Path,
+        help="YAML file or directory (expects product_breakdown.yaml).",
+    )
+    product_diagram_parser.add_argument(
+        "-o", "--output",
+        type=Path,
+        default=Path("output"),
+        help="Output directory for generated files (default: output/).",
+    )
+    product_diagram_parser.set_defaults(func=run_product_diagram_command)
+
     # 'product verify' subcommand
-    verify_parser = product_subparsers.add_parser(
+    product_verify_parser = product_subparsers.add_parser(
         "verify",
         help="Verify all leaf functions are allocated to configuration items.",
     )
-    verify_parser.add_argument(
+    product_verify_parser.add_argument(
         "-p", "--product-breakdown",
         type=Path,
         required=True,
         help="Product breakdown YAML file or directory (expects product_breakdown.yaml).",
     )
-    verify_parser.add_argument(
+    product_verify_parser.add_argument(
         "-f", "--functional-decomposition",
         type=Path,
         required=True,
         help="Functional decomposition YAML file or directory (expects functional_decomposition.yaml).",
     )
-    verify_parser.set_defaults(func=run_product_verify_command)
-
-    # 'product diagram' subcommand
-    diagram_parser = product_subparsers.add_parser(
-        "diagram",
-        help="Generate product breakdown diagrams.",
-    )
-    diagram_parser.add_argument(
-        "input",
-        type=Path,
-        help="Product breakdown YAML file or directory.",
-    )
-    diagram_parser.add_argument(
-        "-o", "--output",
-        type=Path,
-        default=Path("output"),
-        help="Output directory (default: output/).",
-    )
-    diagram_parser.set_defaults(func=run_product_diagram_command)
+    product_verify_parser.set_defaults(func=run_product_verify_command)
 
     args = parser.parse_args()
     args.func(args)
