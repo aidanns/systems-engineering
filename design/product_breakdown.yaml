@@ -4,7 +4,7 @@ components:
   - name: Application Software
     description: Python application and its library dependencies.
     configuration_items:
-      - name: systems-engineering-diagrams
+      - name: systems-engineering
         description: Python package providing the CLI and all generation/verification logic.
         functions:
           - Find Subtree

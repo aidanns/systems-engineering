@@ -121,6 +121,7 @@ The dev container can also be opened directly from VS Code ("Reopen in Container
 ## Development Workflow
 
 - Before commencing development, pull the latest changes from GitHub so work begins from the tip of `main`.
+- All changes — including small ones like renames, doc tweaks, or regenerating design artefacts — must be developed in a git worktree and landed via a pull request. Do not commit directly to `main`, even for trivial work.
 - New features must be developed in a git worktree:
   - Use the built-in `EnterWorktree` tool (while on `main`) rather than running `git worktree add` manually. It creates the worktree under `.claude/worktrees/` and switches the session into it.
   - Use `ExitWorktree` when finished. Pass `action: "keep"` to preserve the work or `action: "remove"` for a clean teardown (use `discard_changes: true` to force-remove a worktree with uncommitted changes).
