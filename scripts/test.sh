@@ -30,7 +30,7 @@ echo "Checking product verify..."
 echo "Checking design product verify..."
 "$SYSTEMS_ENGINEERING" product verify \
     -p "$REPO_ROOT/design/product_breakdown.yaml" \
-    -f "$REPO_ROOT/design/functions.yaml"
+    -f "$REPO_ROOT/design/functional_decomposition.yaml"
 
 echo "Checking file generation..."
 TMPDIR="$(mktemp -d)"

@@ -25,7 +25,7 @@ echo "Generating diagrams to $OUTPUT_DIR..."
 "$SYSTEMS_ENGINEERING" product diagram "$REPO_ROOT/example/" -o "$OUTPUT_DIR"
 
 echo "Regenerating design artefacts..."
-"$SYSTEMS_ENGINEERING" function diagram "$REPO_ROOT/design/functions.yaml" -o "$REPO_ROOT/design/"
+"$SYSTEMS_ENGINEERING" function diagram "$REPO_ROOT/design/functional_decomposition.yaml" -o "$REPO_ROOT/design/"
 "$SYSTEMS_ENGINEERING" product diagram "$REPO_ROOT/design/product_breakdown.yaml" -o "$REPO_ROOT/design/"
 
 echo "Done."
