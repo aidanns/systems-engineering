@@ -129,6 +129,8 @@ The dev container can also be opened directly from VS Code ("Reopen in Container
 - The worktree must use a branch named `feature/[feature-name]` (kebab-case) based on the tip of `main`.
 - The worktree directory must be named `[feature-name]` (matching the branch suffix), located at `.claude/worktrees/[feature-name]`. For example, branch `feature/configure-dotfiles` lives in `.claude/worktrees/configure-dotfiles`.
 - After changes are made, commit them to the feature branch, push the branch to GitHub, and open a pull request from the feature branch into `main`. Print the PR URL in the chat after opening it so the user can click through.
+- Before pushing any commit to a feature branch, the full Post-Change Review workflow from the user-global CLAUDE.md is mandatory: run `/simplify` on the changes and spawn a code-review subagent, then address its findings. Do not skip these steps for "small" changes.
+- After pushing, the full PR Review Workflow from the user-global CLAUDE.md is mandatory on every push (not just the first one): notify the user, re-check the PR description, execute and tick off every test-plan checkbox in the PR body, spawn a background "Claude Reviewer" subagent, then address its comments. Do not skip steps because the change is small or the PR already exists.
 
 ## Releasing
 

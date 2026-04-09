@@ -85,10 +85,10 @@ def is_leaf(function: dict) -> bool:
 
 
 def emit_node(lines: list[str], node_id: str, node: dict, indent: str = "",
-              shape: str | None = None, width: int = 400, height: int | None = None,
-              newline_spaces: bool = False):
+              shape: str | None = None, width: int = 250, height: int | None = None,
+              wrap_label: bool = False):
     """Emit d2 lines for a single labeled node."""
-    label = re.sub(r'[ -]', r'\\n', node['name']) if newline_spaces else node['name']
+    label = re.sub(r'[ -]', r'\\n', node['name']) if wrap_label else node['name']
     lines.append(f"{indent}{node_id}: {label}")
     lines.append(f"{indent}{node_id}.width: {width}")
     if height is not None:
@@ -101,8 +101,8 @@ def emit_node(lines: list[str], node_id: str, node: dict, indent: str = "",
 
 def emit_container(lines: list[str], parent_id: str, children: list[dict],
                    counter: list[int], prefix: str = "f", shape: str | None = None,
-                   grid_columns: int = 1, node_width: int = 400,
-                   node_height: int | None = None, newline_spaces: bool = False):
+                   grid_columns: int = 1, node_width: int = 250,
+                   node_height: int | None = None, wrap_label: bool = False):
     """Emit a grid container holding child nodes, connected to the parent node."""
     container_id = f"{parent_id}_container"
     grid_rows = math.ceil(len(children) / grid_columns)
@@ -119,7 +119,7 @@ def emit_container(lines: list[str], parent_id: str, children: list[dict],
         counter[0] += 1
         emit_node(lines, child_id, child, indent="  ", shape=shape,
                   width=node_width, height=node_height,
-                  newline_spaces=newline_spaces)
+                  wrap_label=wrap_label)
     lines.append(f"}}")
     lines.append(f"{parent_id} -> {container_id}")
 
@@ -193,7 +193,7 @@ def product_component_to_d2(component: dict, parent_id: str, lines: list[str], c
     if cis:
         emit_container(lines, node_id, cis, counter, prefix="p", shape="circle",
                        grid_columns=3, node_width=150, node_height=150,
-                       newline_spaces=True)
+                       wrap_label=True)
 
 
 def product_yaml_to_d2(data: dict) -> str:
