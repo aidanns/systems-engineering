@@ -88,7 +88,7 @@ def emit_node(lines: list[str], node_id: str, node: dict, indent: str = "",
               shape: str | None = None, width: int = 400, height: int | None = None,
               newline_spaces: bool = False):
     """Emit d2 lines for a single labeled node."""
-    label = node['name'].replace(' ', r'\n') if newline_spaces else node['name']
+    label = re.sub(r'[ -]', r'\\n', node['name']) if newline_spaces else node['name']
     lines.append(f"{indent}{node_id}: {label}")
     lines.append(f"{indent}{node_id}.width: {width}")
     if height is not None:
