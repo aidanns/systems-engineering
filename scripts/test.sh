@@ -27,6 +27,11 @@ echo "Checking product verify..."
     -p "$REPO_ROOT/example/product_breakdown.yaml" \
     -f "$REPO_ROOT/example/functional_decomposition.yaml"
 
+echo "Checking design product verify..."
+"$SYSTEMS_ENGINEERING" product verify \
+    -p "$REPO_ROOT/design/product_breakdown.yaml" \
+    -f "$REPO_ROOT/design/functions.yaml"
+
 echo "Checking file generation..."
 TMPDIR="$(mktemp -d)"
 trap 'rm -rf "$TMPDIR"' EXIT

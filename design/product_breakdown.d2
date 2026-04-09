@@ -1,0 +1,74 @@
+vars: {
+  d2-config: {
+    layout-engine: elk
+    # Terminal theme code
+    theme-id: 300
+  }
+}
+
+direction: down
+
+root: Systems Engineering CLI
+root.width: 250
+
+p0: Application Software
+p0.width: 250
+root -> p0
+p0_container: "" {
+  grid-columns: 3
+  grid-rows: 1
+  grid-gap: 5
+  style: {
+    stroke-width: 0
+    fill: transparent
+  }
+  p1: systems-engineering-diagrams
+  p1.width: 150
+  p1.height: 150
+  p1.shape: circle
+  p2: PyYAML
+  p2.width: 150
+  p2.height: 150
+  p2.shape: circle
+}
+p0 -> p0_container
+
+p3: Rendering Engine
+p3.width: 250
+root -> p3
+p3_container: "" {
+  grid-columns: 3
+  grid-rows: 1
+  grid-gap: 5
+  style: {
+    stroke-width: 0
+    fill: transparent
+  }
+  p4: d2
+  p4.width: 150
+  p4.height: 150
+  p4.shape: circle
+}
+p3 -> p3_container
+
+p5: Development Tools
+p5.width: 250
+root -> p5
+p5_container: "" {
+  grid-columns: 3
+  grid-rows: 1
+  grid-gap: 5
+  style: {
+    stroke-width: 0
+    fill: transparent
+  }
+  p6: pytest
+  p6.width: 150
+  p6.height: 150
+  p6.shape: circle
+  p7: yq
+  p7.width: 150
+  p7.height: 150
+  p7.shape: circle
+}
+p5 -> p5_container

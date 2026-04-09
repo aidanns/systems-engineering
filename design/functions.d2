@@ -1,0 +1,115 @@
+vars: {
+  d2-config: {
+    layout-engine: elk
+    # Terminal theme code
+    theme-id: 300
+  }
+}
+
+direction: down
+
+root: Systems Engineering CLI
+root.width: 250
+
+f0: Input Processing
+f0.width: 250
+root -> f0
+f0_container: "" {
+  grid-columns: 1
+  grid-rows: 3
+  grid-gap: 5
+  style: {
+    stroke-width: 0
+    fill: transparent
+  }
+  f1: Load YAML
+  f1.width: 250
+  f2: Find Subtree
+  f2.width: 250
+  f3: Filter Tree
+  f3.width: 250
+}
+f0 -> f0_container
+
+f4: Output Generation
+f4.width: 250
+root -> f4
+f4_container: "" {
+  grid-columns: 1
+  grid-rows: 6
+  grid-gap: 5
+  style: {
+    stroke-width: 0
+    fill: transparent
+  }
+  f5: Generate Functional D2
+  f5.width: 250
+  f6: Generate Functional Markdown
+  f6.width: 250
+  f7: Generate Functional CSV
+  f7.width: 250
+  f8: Generate Product D2
+  f8.width: 250
+  f8.style.stroke: red
+  f9: Generate Product Markdown
+  f9.width: 250
+  f9.style.stroke: red
+  f10: Generate Product CSV
+  f10.width: 250
+  f10.style.stroke: red
+}
+f4 -> f4_container
+
+f11: Rendering
+f11.width: 250
+root -> f11
+f11_container: "" {
+  grid-columns: 1
+  grid-rows: 2
+  grid-gap: 5
+  style: {
+    stroke-width: 0
+    fill: transparent
+  }
+  f12: Render SVG
+  f12.width: 250
+  f13: Render PNG
+  f13.width: 250
+}
+f11 -> f11_container
+
+f14: Verification
+f14.width: 250
+f14.style.stroke: red
+root -> f14
+f14_container: "" {
+  grid-columns: 1
+  grid-rows: 1
+  grid-gap: 5
+  style: {
+    stroke-width: 0
+    fill: transparent
+  }
+  f15: Verify Function Allocation
+  f15.width: 250
+  f15.style.stroke: red
+}
+f14 -> f14_container
+
+f16: CLI Interface
+f16.width: 250
+root -> f16
+f16_container: "" {
+  grid-columns: 1
+  grid-rows: 2
+  grid-gap: 5
+  style: {
+    stroke-width: 0
+    fill: transparent
+  }
+  f17: Argument Parsing
+  f17.width: 250
+  f18: File Processing
+  f18.width: 250
+}
+f16 -> f16_container
