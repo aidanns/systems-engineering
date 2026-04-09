@@ -1,0 +1,24 @@
+{
+  "name": "systems-engineering",
+  "build": {
+    "dockerfile": "Dockerfile"
+  },
+  "initializeCommand": ".devcontainer/start-notify-bridge.sh",
+  "postCreateCommand": "scripts/build.sh && .devcontainer/install-claude-hooks.sh",
+  // Optional: forward ANTHROPIC_API_KEY for Claude Code API key auth.
+  // Not required if using OAuth login (claude login) inside the container.
+  "remoteEnv": {
+    "ANTHROPIC_API_KEY": "${localEnv:ANTHROPIC_API_KEY}"
+  },
+  // Named volumes persist Claude Code and GitHub CLI auth across rebuilds.
+  // Bind mounts layer host config on top of the volumes.
+  // Prerequisites: ~/.gitconfig, ~/.ssh, and ~/.claude/CLAUDE.md
+  // must exist on the host. Remove any lines for files you don't have.
+  "mounts": [
+    "source=claude-data,target=/home/vscode/.claude,type=volume",
+    "source=github-cli-data,target=/home/vscode/.config/gh,type=volume",
+    "source=${localEnv:HOME}/.claude/CLAUDE.md,target=/home/vscode/.claude/CLAUDE.md,type=bind",
+    "source=${localEnv:HOME}/.gitconfig,target=/home/vscode/.gitconfig,type=bind,readonly",
+    "source=${localEnv:HOME}/.ssh,target=/home/vscode/.ssh,type=bind,readonly"
+  ]
+}

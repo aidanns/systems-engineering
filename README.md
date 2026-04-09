@@ -36,6 +36,22 @@ Requires a `HOMEBREW_GITHUB_API_TOKEN` environment variable with a GitHub person
 scripts/build.sh
 ```
 
+### Dev Container
+
+A dev container configuration is provided in `.devcontainer/` with Python 3, d2, and Claude Code pre-installed. Use it via VS Code ("Reopen in Container"), JetBrains Gateway, or the CLI:
+
+```bash
+# One-time setup: install devcontainer CLI, build and start the container
+scripts/setup.sh
+
+# Open a shell inside the dev container
+npx devcontainer exec --workspace-folder . bash
+```
+
+#### Host notifications
+
+Claude Code's notification and stop hooks rely on host-only tools (`terminal-notifier`, iTerm, etc.) and don't fire from inside the container. To bridge them, the devcontainer's `initializeCommand` starts [`dev-notify-bridge`](https://www.npmjs.com/package/dev-notify-bridge) on the host (via `npx`, requires `node`/`npx` on the host PATH — already a prerequisite for the devcontainer CLI). The container's Notification and Stop hooks are wired by `postCreateCommand` to POST to `http://host.docker.internal:6789/notify`, producing native macOS notifications titled `Claude Code — <repo>`. Logs are at `.devcontainer/dev-notify-bridge-logs/dev-notify-bridge.log`.
+
 ## Usage
 
 Check the installed version:

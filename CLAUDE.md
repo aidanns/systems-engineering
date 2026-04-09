@@ -66,28 +66,43 @@ scripts/generate.sh
 scripts/generate.sh /path/to/output
 
 # Generate diagrams from a single file (direct)
-.venv/bin/systems-engineering function example/functional_decomposition.yaml -o output/
+.venv-$(uname -s)-$(uname -m)/bin/systems-engineering function example/functional_decomposition.yaml -o output/
 
 # Generate diagrams from all files in a directory
-.venv/bin/systems-engineering function example/ -o output/
+.venv-$(uname -s)-$(uname -m)/bin/systems-engineering function example/ -o output/
 
 # Generate product breakdown diagrams from a single file
-.venv/bin/systems-engineering product diagram product_breakdown/example.yaml -o output/
+.venv-$(uname -s)-$(uname -m)/bin/systems-engineering product diagram product_breakdown/example.yaml -o output/
 
 # Verify all leaf functions are allocated to configuration items
-.venv/bin/systems-engineering product verify \
+.venv-$(uname -s)-$(uname -m)/bin/systems-engineering product verify \
     -p example/product_breakdown.yaml \
     -f example/functional_decomposition.yaml
 
 # Verify using directory mode (finds matching files automatically)
-.venv/bin/systems-engineering product verify -p example/ -f example/
+.venv-$(uname -s)-$(uname -m)/bin/systems-engineering product verify -p example/ -f example/
 ```
+
+## Dev Container
+
+A dev container configuration is provided in `.devcontainer/`. It uses `mcr.microsoft.com/devcontainers/base:ubuntu` with Python 3, d2, and Claude Code pre-installed.
+
+```bash
+# One-time setup: install devcontainer CLI, build and start the container
+scripts/setup.sh
+
+# Run a command inside the dev container
+npx devcontainer exec --workspace-folder . bash
+```
+
+The dev container can also be opened directly from VS Code ("Reopen in Container") or JetBrains Gateway.
 
 ## Dependencies
 
 - Python 3.10+
 - d2 (must be on PATH)
 - pyyaml
+- Node.js (for devcontainer CLI, dev dependency)
 
 ## Conventions
 
@@ -95,9 +110,20 @@ scripts/generate.sh /path/to/output
 - All bash scripts in `scripts/` must be portable across macOS and Linux.
 - Before finishing work, confirm that `scripts/build.sh`, `scripts/test.sh`, and `scripts/generate.sh` all run successfully.
 - When adding new output types or changing output format, regenerate and commit updated golden files in `tests/golden/` so changes are reviewable during PR review.
-- Keep `design/functions.yaml` up to date as new functionality is added to the CLI. Regenerate with: `.venv/bin/systems-engineering function design/functions.yaml -o design/`
-- Keep `design/product_breakdown.yaml` up to date when components or dependencies change. Regenerate with: `.venv/bin/systems-engineering product diagram design/product_breakdown.yaml -o design/`
+- Keep `design/functions.yaml` up to date as new functionality is added to the CLI. Regenerate with: `.venv-$(uname -s)-$(uname -m)/bin/systems-engineering function design/functions.yaml -o design/`
+- Keep `design/product_breakdown.yaml` up to date when components or dependencies change. Regenerate with: `.venv-$(uname -s)-$(uname -m)/bin/systems-engineering product diagram design/product_breakdown.yaml -o design/`
 - Before finishing implementation work, check that `README.md` is consistent with the current functionality. Update it if new features, flags, or commands have been added.
+
+## Development Workflow
+
+- Before commencing development, pull the latest changes from GitHub so work begins from the tip of `main`.
+- New features must be developed in a git worktree:
+  - Use the built-in `EnterWorktree` tool (while on `main`) rather than running `git worktree add` manually. It creates the worktree under `.claude/worktrees/` and switches the session into it.
+  - Use `ExitWorktree` when finished. Pass `action: "keep"` to preserve the work or `action: "remove"` for a clean teardown (use `discard_changes: true` to force-remove a worktree with uncommitted changes).
+  - For isolated parallel work, prefer `Agent(..., isolation: "worktree")` to spawn a subagent in its own throwaway worktree.
+- The worktree must use a branch named `feature/[feature-name]` (kebab-case) based on the tip of `main`.
+- The worktree directory must be named `[feature-name]` (matching the branch suffix), located at `.claude/worktrees/[feature-name]`. For example, branch `feature/configure-dotfiles` lives in `.claude/worktrees/configure-dotfiles`.
+- After changes are made, commit them to the feature branch, push the branch to GitHub, and open a pull request from the feature branch into `main`.
 
 ## Releasing
 
