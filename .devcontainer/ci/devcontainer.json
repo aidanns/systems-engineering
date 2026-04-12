@@ -1,0 +1,7 @@
+{
+  "name": "systems-engineering-ci",
+  "build": {
+    "dockerfile": "../Dockerfile"
+  },
+  "postCreateCommand": "scripts/build.sh"
+}
