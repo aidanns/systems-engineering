@@ -57,13 +57,19 @@ fi
 # --- Helper functions ---
 
 gh_curl() {
-    curl -fsSL -H "Authorization: token $GITHUB_TOKEN" \
-         -H "Accept: application/vnd.github+json" "$@"
+    local auth_args=()
+    if [[ -n "${GITHUB_TOKEN:-}" ]]; then
+        auth_args+=(-H "Authorization: token $GITHUB_TOKEN")
+    fi
+    curl -fsSL "${auth_args[@]}" -H "Accept: application/vnd.github+json" "$@"
 }
 
 gh_download() {
-    curl -fsSL -H "Authorization: token $GITHUB_TOKEN" \
-         -H "Accept: application/octet-stream" -o "$2" "$1"
+    local auth_args=()
+    if [[ -n "${GITHUB_TOKEN:-}" ]]; then
+        auth_args+=(-H "Authorization: token $GITHUB_TOKEN")
+    fi
+    curl -fsSL "${auth_args[@]}" -H "Accept: application/octet-stream" -o "$2" "$1"
 }
 
 # --- Prerequisite checks ---
@@ -134,7 +140,6 @@ if [[ -n "$LOCAL_DIR" ]]; then
     cp "$checksum_path" "$WORK_DIR/"
 else
     # Remote mode: fetch from GitHub releases.
-    : "${GITHUB_TOKEN:?GITHUB_TOKEN must be set (private repo)}"
 
     # Fetch release metadata
     if [[ -z "$VERSION" ]]; then
