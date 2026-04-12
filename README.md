@@ -79,6 +79,7 @@ Claude Code's notification and stop hooks rely on host-only tools (`terminal-not
 The data model is importable as a Python library, so other tools can read and manipulate the same YAML files:
 
 ```python
+from pathlib import Path
 from systems_engineering import (
     Function,
     Component,
@@ -93,13 +94,13 @@ from systems_engineering import (
 )
 
 # Load and parse a functional decomposition
-fd = parse_functional_decomposition(load_yaml("path/to/functional_decomposition.yaml"))
+fd = parse_functional_decomposition(load_yaml(Path("path/to/functional_decomposition.yaml")))
 print(fd.name)  # root function name
 for child in fd.functions:
     print(f"  {child.name}: {child.description}")
 
 # Load and parse a product breakdown
-pb = parse_product_breakdown(load_yaml("path/to/product_breakdown.yaml"))
+pb = parse_product_breakdown(load_yaml(Path("path/to/product_breakdown.yaml")))
 for component in pb.components:
     for ci in component.configuration_items:
         print(f"  {ci.name}: {ci.functions}")
