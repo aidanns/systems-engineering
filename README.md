@@ -74,6 +74,43 @@ npx devcontainer exec --workspace-folder . bash
 
 Claude Code's notification and stop hooks rely on host-only tools (`terminal-notifier`, iTerm, etc.) and don't fire from inside the container. To bridge them, the devcontainer's `initializeCommand` starts [`dev-notify-bridge`](https://www.npmjs.com/package/dev-notify-bridge) on the host (via `npx`, requires `node`/`npx` on the host PATH — already a prerequisite for the devcontainer CLI). The container's Notification and Stop hooks are wired by `postCreateCommand` to POST to `http://host.docker.internal:6789/notify`, producing native macOS notifications titled `Claude Code — <repo>`. Logs are at `.devcontainer/dev-notify-bridge-logs/dev-notify-bridge.log`.
 
+## Library Usage
+
+The data model is importable as a Python library, so other tools can read and manipulate the same YAML files:
+
+```python
+from systems_engineering import (
+    Function,
+    Component,
+    ConfigurationItem,
+    load_yaml,
+    parse_functional_decomposition,
+    parse_product_breakdown,
+    find_subtree,
+    filter_tree,
+    collect_leaf_function_names,
+    collect_allocated_functions,
+)
+
+# Load and parse a functional decomposition
+fd = parse_functional_decomposition(load_yaml("path/to/functional_decomposition.yaml"))
+print(fd.name)  # root function name
+for child in fd.functions:
+    print(f"  {child.name}: {child.description}")
+
+# Load and parse a product breakdown
+pb = parse_product_breakdown(load_yaml("path/to/product_breakdown.yaml"))
+for component in pb.components:
+    for ci in component.configuration_items:
+        print(f"  {ci.name}: {ci.functions}")
+
+# Tree operations
+subtree = find_subtree(fd, "Power Management")
+filtered = filter_tree(fd, ["Power"], include_descendants=True)
+leaf_names = collect_leaf_function_names(fd)
+allocated = collect_allocated_functions(pb)
+```
+
 ## Usage
 
 Check the installed version:

@@ -6,7 +6,9 @@ CLI tools for generating systems engineering diagrams from YAML definitions, ren
 
 ## Structure
 
-- `src/systems_engineering/cli.py` — Main CLI entry point. Reads YAML, outputs `.d2` definitions, renders to SVG/PNG via d2.
+- `src/systems_engineering/model.py` — Data model library: dataclasses (`Function`, `Component`, `ConfigurationItem`), YAML parsing, and tree operations. Importable by external tools.
+- `src/systems_engineering/render.py` — Rendering functions: d2 diagram generation, markdown/CSV table output, and d2-to-SVG/PNG rendering.
+- `src/systems_engineering/cli.py` — CLI entry point: argparse orchestration, file resolution, and command dispatch.
 - `pyproject.toml` — Python package configuration. Defines the `systems-engineering` console entry point.
 - `example/` — Example YAML files (functional decomposition and product breakdown).
 - `output/` — Generated `.d2`, `.svg`, `.png`, `.md`, and `.csv` files (gitignored).

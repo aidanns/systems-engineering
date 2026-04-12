@@ -6,6 +6,10 @@ functions:
     functions:
       - name: Load YAML
         description: Read and parse YAML files from disk.
+      - name: Parse Functional Decomposition
+        description: Convert raw YAML dict into typed Function tree.
+      - name: Parse Product Breakdown
+        description: Convert raw YAML dict into typed Component tree.
       - name: Find Subtree
         description: Extract a subtree rooted at a named node.
       - name: Filter Tree

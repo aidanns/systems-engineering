@@ -16,7 +16,7 @@ f0.width: 400
 root -> f0
 f0_container: "" {
   grid-columns: 1
-  grid-rows: 3
+  grid-rows: 5
   grid-gap: 5
   style: {
     stroke-width: 0
@@ -24,17 +24,21 @@ f0_container: "" {
   }
   f1: Load YAML
   f1.width: 400
-  f2: Find Subtree
+  f2: Parse Functional Decomposition
   f2.width: 400
-  f3: Filter Tree
+  f3: Parse Product Breakdown
   f3.width: 400
+  f4: Find Subtree
+  f4.width: 400
+  f5: Filter Tree
+  f5.width: 400
 }
 f0 -> f0_container
 
-f4: Output Generation
-f4.width: 400
-root -> f4
-f4_container: "" {
+f6: Output Generation
+f6.width: 400
+root -> f6
+f6_container: "" {
   grid-columns: 1
   grid-rows: 6
   grid-gap: 5
@@ -42,25 +46,25 @@ f4_container: "" {
     stroke-width: 0
     fill: transparent
   }
-  f5: Generate Functional D2
-  f5.width: 400
-  f6: Generate Functional Markdown
-  f6.width: 400
-  f7: Generate Functional CSV
+  f7: Generate Functional D2
   f7.width: 400
-  f8: Generate Product D2
+  f8: Generate Functional Markdown
   f8.width: 400
-  f9: Generate Product Markdown
+  f9: Generate Functional CSV
   f9.width: 400
-  f10: Generate Product CSV
+  f10: Generate Product D2
   f10.width: 400
+  f11: Generate Product Markdown
+  f11.width: 400
+  f12: Generate Product CSV
+  f12.width: 400
 }
-f4 -> f4_container
+f6 -> f6_container
 
-f11: Rendering
-f11.width: 400
-root -> f11
-f11_container: "" {
+f13: Rendering
+f13.width: 400
+root -> f13
+f13_container: "" {
   grid-columns: 1
   grid-rows: 2
   grid-gap: 5
@@ -68,17 +72,17 @@ f11_container: "" {
     stroke-width: 0
     fill: transparent
   }
-  f12: Render SVG
-  f12.width: 400
-  f13: Render PNG
-  f13.width: 400
+  f14: Render SVG
+  f14.width: 400
+  f15: Render PNG
+  f15.width: 400
 }
-f11 -> f11_container
+f13 -> f13_container
 
-f14: Verification
-f14.width: 400
-root -> f14
-f14_container: "" {
+f16: Verification
+f16.width: 400
+root -> f16
+f16_container: "" {
   grid-columns: 1
   grid-rows: 1
   grid-gap: 5
@@ -86,15 +90,15 @@ f14_container: "" {
     stroke-width: 0
     fill: transparent
   }
-  f15: Verify Function Allocation
-  f15.width: 400
+  f17: Verify Function Allocation
+  f17.width: 400
 }
-f14 -> f14_container
+f16 -> f16_container
 
-f16: CLI Interface
-f16.width: 400
-root -> f16
-f16_container: "" {
+f18: CLI Interface
+f18.width: 400
+root -> f18
+f18_container: "" {
   grid-columns: 1
   grid-rows: 2
   grid-gap: 5
@@ -102,9 +106,9 @@ f16_container: "" {
     stroke-width: 0
     fill: transparent
   }
-  f17: Argument Parsing
-  f17.width: 400
-  f18: File Processing
-  f18.width: 400
+  f19: Argument Parsing
+  f19.width: 400
+  f20: File Processing
+  f20.width: 400
 }
-f16 -> f16_container
+f18 -> f18_container
