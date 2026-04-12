@@ -84,7 +84,11 @@ else
 fi
 
 echo "Running pytest..."
-"$VENV_DIR/bin/pytest" "$REPO_ROOT/tests/" -v
+if [ "${CI:-}" = "true" ]; then
+    "$VENV_DIR/bin/pytest" "$REPO_ROOT/tests/" --junit-xml="$REPO_ROOT/results.xml"
+else
+    "$VENV_DIR/bin/pytest" "$REPO_ROOT/tests/" -v
+fi
 
 echo "All tests passed."
 echo ""

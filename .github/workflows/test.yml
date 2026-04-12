@@ -19,6 +19,12 @@ jobs:
           configFile: .devcontainer/ci/devcontainer.json
           runCmd: scripts/test.sh
 
+      - name: Test report
+        if: always()
+        uses: mikepenz/action-junit-report@v5
+        with:
+          report_paths: results.xml
+
       - name: Regenerate golden files
         if: failure()
         uses: devcontainers/ci@v0.3
