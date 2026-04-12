@@ -10,24 +10,43 @@ jobs:
   test:
     runs-on: ubuntu-24.04-arm
     timeout-minutes: 10
+    permissions:
+      checks: write
+      contents: read
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-      - name: Test
+      - name: Run tests (scripts/test.sh) in devcontainer
+        id: test
         uses: devcontainers/ci@v0.3
         with:
           configFile: .devcontainer/ci/devcontainer.json
           runCmd: scripts/test.sh
+          env: |
+            CI=true
+
+      - name: Generate JUnit Test Report from pytest output
+        if: always()
+        uses: mikepenz/action-junit-report@v5
+        with:
+          report_paths: results.xml
+          include_passed: true
+
+      - name: Run installation integration tests (scripts/test-install.sh)
+        run: |
+          scripts/build.sh
+          scripts/test-install.sh
 
       - name: Regenerate golden files
-        if: failure()
+        if: failure() && steps.test.conclusion == 'failure'
         uses: devcontainers/ci@v0.3
         with:
           configFile: .devcontainer/ci/devcontainer.json
           runCmd: scripts/regenerate_golden.sh
 
       - name: Upload regenerated golden files
-        if: failure()
+        if: failure() && steps.test.conclusion == 'failure'
         uses: actions/upload-artifact@v4
         with:
           name: golden-files

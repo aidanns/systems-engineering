@@ -16,6 +16,7 @@ IMAGE_OLD_PYTHON="se-install-test-old-python"
 
 echo "Building wheel for testing..."
 ARTIFACTS_DIR="$(mktemp -d)"
+chmod 755 "$ARTIFACTS_DIR"
 trap 'rm -rf "$ARTIFACTS_DIR"' EXIT
 
 wheel_filename="$("$REPO_ROOT/scripts/build-wheel.sh" "$ARTIFACTS_DIR")"
