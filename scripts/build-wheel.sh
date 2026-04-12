@@ -9,8 +9,8 @@ source "$(dirname "$0")/env.sh"
 OUTDIR="${1:?Usage: build-wheel.sh <output-directory>}"
 mkdir -p "$OUTDIR"
 
-"$VENV_DIR/bin/pip" install --quiet build
-"$VENV_DIR/bin/python" -m build --wheel --outdir "$OUTDIR" "$REPO_ROOT"
+"$VENV_DIR/bin/pip" install --quiet build >&2
+"$VENV_DIR/bin/python" -m build --wheel --outdir "$OUTDIR" "$REPO_ROOT" >&2
 
 wheel_path="$(ls "$OUTDIR"/*.whl)"
 wheel_filename="$(basename "$wheel_path")"
