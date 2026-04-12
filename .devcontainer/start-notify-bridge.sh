@@ -20,6 +20,6 @@ fi
 
 mkdir -p "${LOG_DIR}"
 
-nohup npx --yes dev-notify-bridge --port "${PORT}" \
+nohup npx --yes github:aidanns/dev-notify-bridge --port "${PORT}" \
   >>"${LOG_FILE}" 2>&1 &
 disown || true

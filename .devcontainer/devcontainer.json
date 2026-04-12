@@ -15,8 +15,8 @@
   // Prerequisites: ~/.gitconfig, ~/.ssh, and ~/.claude/CLAUDE.md
   // must exist on the host. Remove any lines for files you don't have.
   "mounts": [
-    "source=claude-data,target=/home/vscode/.claude,type=volume",
-    "source=github-cli-data,target=/home/vscode/.config/gh,type=volume",
+    "source=systems-engineering-claude-data,target=/home/vscode/.claude,type=volume",
+    "source=systems-engineering-github-cli-data,target=/home/vscode/.config/gh,type=volume",
     "source=${localEnv:HOME}/.claude/CLAUDE.md,target=/home/vscode/.claude/CLAUDE.md,type=bind",
     "source=${localEnv:HOME}/.gitconfig,target=/home/vscode/.gitconfig,type=bind,readonly",
     "source=${localEnv:HOME}/.ssh,target=/home/vscode/.ssh,type=bind,readonly"
