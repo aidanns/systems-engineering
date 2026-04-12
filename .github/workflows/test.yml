@@ -10,6 +10,9 @@ jobs:
   test:
     runs-on: ubuntu-24.04-arm
     timeout-minutes: 10
+    permissions:
+      checks: write
+      contents: read
     steps:
       - uses: actions/checkout@v4
 
@@ -18,6 +21,8 @@ jobs:
         with:
           configFile: .devcontainer/ci/devcontainer.json
           runCmd: scripts/test.sh
+          env: |
+            CI=true
 
       - name: Test report
         if: always()
