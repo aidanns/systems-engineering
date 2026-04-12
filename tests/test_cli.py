@@ -25,6 +25,7 @@ def strip_d2_version(svg_bytes: bytes) -> bytes:
 
 
 from systems_engineering.cli import (
+    _PRODUCT_CHILDREN_KEYS,
     collect_allocated_functions,
     collect_leaf_function_names,
     filter_tree,
@@ -398,6 +399,72 @@ class TestProductDiagramCLI:
         assert result.returncode == 0
         assert (tmp_path / "product_breakdown.d2").exists()
 
+    def test_product_diagram_with_root(self, tmp_path):
+        cli_path = Path(sys.executable).parent / "systems-engineering"
+        result = subprocess.run(
+            [str(cli_path), "product", "diagram",
+             str(PRODUCT_EXAMPLE_YAML), "-o", str(tmp_path),
+             "--root", "Power Subsystem"],
+            capture_output=True, text=True,
+        )
+        assert result.returncode == 0
+        d2_content = (tmp_path / "product_breakdown.d2").read_text()
+        assert "Power Subsystem" in d2_content
+        assert "Thermal Subsystem" not in d2_content
+
+    def test_product_diagram_with_filter(self, tmp_path):
+        cli_path = Path(sys.executable).parent / "systems-engineering"
+        result = subprocess.run(
+            [str(cli_path), "product", "diagram",
+             str(PRODUCT_EXAMPLE_YAML), "-o", str(tmp_path),
+             "--filter", "Power"],
+            capture_output=True, text=True,
+        )
+        assert result.returncode == 0
+        d2_content = (tmp_path / "product_breakdown.d2").read_text()
+        assert "Power Subsystem" in d2_content
+        assert "Data Subsystem" not in d2_content
+
+    def test_product_diagram_with_root_and_filter(self, tmp_path):
+        cli_path = Path(sys.executable).parent / "systems-engineering"
+        result = subprocess.run(
+            [str(cli_path), "product", "diagram",
+             str(PRODUCT_EXAMPLE_YAML), "-o", str(tmp_path),
+             "--filter", "Power", "--include-descendants",
+             "--root", "Example System"],
+            capture_output=True, text=True,
+        )
+        assert result.returncode == 0
+        d2_content = (tmp_path / "product_breakdown.d2").read_text()
+        assert "Power Subsystem" in d2_content
+        assert "Thermal Subsystem" not in d2_content
+
+    def test_product_diagram_with_filter_and_descendants(self, tmp_path):
+        cli_path = Path(sys.executable).parent / "systems-engineering"
+        result = subprocess.run(
+            [str(cli_path), "product", "diagram",
+             str(PRODUCT_EXAMPLE_YAML), "-o", str(tmp_path),
+             "--filter", "^Power Subsystem$", "--include-descendants"],
+            capture_output=True, text=True,
+        )
+        assert result.returncode == 0
+        d2_content = (tmp_path / "product_breakdown.d2").read_text()
+        assert "Power Subsystem" in d2_content
+        # CI labels are newline-wrapped in D2 output (e.g. "Battery\nPack")
+        assert "Battery" in d2_content
+        assert "Thermal Subsystem" not in d2_content
+
+    def test_product_diagram_nonexistent_root(self, tmp_path):
+        cli_path = Path(sys.executable).parent / "systems-engineering"
+        result = subprocess.run(
+            [str(cli_path), "product", "diagram",
+             str(PRODUCT_EXAMPLE_YAML), "-o", str(tmp_path),
+             "--root", "Nonexistent"],
+            capture_output=True, text=True,
+        )
+        assert result.returncode != 0
+        assert "not found" in result.stderr
+
 
 # --- Golden file tests ---
 
@@ -584,6 +651,122 @@ class TestFilterTree:
         assert "Generate Power" in names
         assert "Store Power" in names
         assert "Distribute Power" in names
+
+
+# --- Product find_subtree tests ---
+
+
+class TestFindSubtreeProduct:
+    PRODUCT_CHILDREN_KEYS = _PRODUCT_CHILDREN_KEYS
+
+    @pytest.fixture(autouse=True)
+    def setup(self):
+        self.data = load_yaml(PRODUCT_EXAMPLE_YAML)
+
+    def test_find_root(self):
+        result = find_subtree(self.data, "Example System",
+                              self.PRODUCT_CHILDREN_KEYS)
+        assert result is not None
+        assert result["name"] == "Example System"
+
+    def test_find_component(self):
+        result = find_subtree(self.data, "Power Subsystem",
+                              self.PRODUCT_CHILDREN_KEYS)
+        assert result is not None
+        assert result["name"] == "Power Subsystem"
+
+    def test_find_configuration_item(self):
+        result = find_subtree(self.data, "Battery Pack",
+                              self.PRODUCT_CHILDREN_KEYS)
+        assert result is not None
+        assert result["name"] == "Battery Pack"
+
+    def test_not_found(self):
+        result = find_subtree(self.data, "Nonexistent",
+                              self.PRODUCT_CHILDREN_KEYS)
+        assert result is None
+
+    def test_process_product_file_nonexistent_root_exits(self, tmp_path):
+        with pytest.raises(SystemExit):
+            process_product_file(PRODUCT_EXAMPLE_YAML, tmp_path,
+                                 root="Nonexistent")
+
+
+# --- Product filter_tree tests ---
+
+
+class TestFilterTreeProduct:
+    PRODUCT_CHILDREN_KEYS = _PRODUCT_CHILDREN_KEYS
+
+    @pytest.fixture(autouse=True)
+    def setup(self):
+        self.data = load_yaml(PRODUCT_EXAMPLE_YAML)
+
+    def _names(self, data: dict) -> set[str]:
+        """Collect all node names in a product tree."""
+        names = {data["name"]}
+        for key in self.PRODUCT_CHILDREN_KEYS:
+            for child in data.get(key, []):
+                names |= self._names(child)
+        return names
+
+    def test_filter_component_includes_ancestors(self):
+        result = filter_tree(self.data, ["Power Subsystem"],
+                             include_descendants=False,
+                             children_keys=self.PRODUCT_CHILDREN_KEYS)
+        names = self._names(result)
+        assert "Example System" in names
+        assert "Power Subsystem" in names
+        assert "Thermal Subsystem" not in names
+        assert "Battery Pack" not in names
+
+    def test_filter_ci_includes_ancestor_component(self):
+        result = filter_tree(self.data, ["Battery Pack"],
+                             include_descendants=False,
+                             children_keys=self.PRODUCT_CHILDREN_KEYS)
+        names = self._names(result)
+        assert "Example System" in names
+        assert "Power Subsystem" in names
+        assert "Battery Pack" in names
+        assert "Solar Panel Assembly" not in names
+        assert "Thermal Subsystem" not in names
+
+    def test_filter_with_include_descendants(self):
+        result = filter_tree(self.data, ["^Power Subsystem$"],
+                             include_descendants=True,
+                             children_keys=self.PRODUCT_CHILDREN_KEYS)
+        names = self._names(result)
+        assert "Power Subsystem" in names
+        assert "Solar Panel Assembly" in names
+        assert "Battery Pack" in names
+        assert "Power Distribution Unit" in names
+        assert "Thermal Subsystem" not in names
+
+    def test_filter_no_match_returns_root_only(self):
+        result = filter_tree(self.data, ["Nonexistent"],
+                             include_descendants=False,
+                             children_keys=self.PRODUCT_CHILDREN_KEYS)
+        assert result["name"] == "Example System"
+        assert "components" not in result
+        assert "configuration_items" not in result
+
+    def test_filter_regex_case_insensitive(self):
+        result = filter_tree(self.data, ["power"],
+                             include_descendants=False,
+                             children_keys=self.PRODUCT_CHILDREN_KEYS)
+        names = self._names(result)
+        assert "Power Subsystem" in names
+        assert "Power Distribution Unit" in names
+
+    def test_filter_preserves_node_properties(self):
+        result = filter_tree(self.data, ["Battery Pack"],
+                             include_descendants=False,
+                             children_keys=self.PRODUCT_CHILDREN_KEYS)
+        power = result["components"][0]
+        assert power["name"] == "Power Subsystem"
+        battery = power["configuration_items"][0]
+        assert battery["name"] == "Battery Pack"
+        assert battery.get("description") == "Lithium-ion battery modules."
 
 
 # --- Product verify tests ---

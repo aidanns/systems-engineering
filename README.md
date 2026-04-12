@@ -147,7 +147,28 @@ components:
               - Function A2
 ```
 
-2. Verify that all leaf functions from a functional decomposition are allocated to configuration items:
+2. Generate product breakdown diagrams:
+
+```bash
+# Generate from a file
+systems-engineering product diagram example/product_breakdown.yaml -o output/
+
+# Generate from a directory (expects product_breakdown.yaml inside)
+systems-engineering product diagram example/ -o output/
+
+# Render a subtree rooted at a specific component or CI
+systems-engineering product diagram example/product_breakdown.yaml -o output/ --root "Power Subsystem"
+
+# Filter to nodes matching a regex (case-insensitive, repeatable)
+systems-engineering product diagram example/product_breakdown.yaml -o output/ --filter "power"
+
+# Include all descendants of matched nodes
+systems-engineering product diagram example/product_breakdown.yaml -o output/ --filter "power" --include-descendants
+```
+
+This produces `.d2`, `.svg`, `.png`, `.md`, and `.csv` files in the output directory.
+
+3. Verify that all leaf functions from a functional decomposition are allocated to configuration items:
 
 ```bash
 systems-engineering product verify \

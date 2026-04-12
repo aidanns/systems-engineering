@@ -27,25 +27,35 @@ def load_yaml(path: Path) -> dict:
         return yaml.safe_load(f)
 
 
-def find_subtree(data: dict, root_name: str) -> dict | None:
+_DEFAULT_CHILDREN_KEYS = ["functions"]
+
+
+def find_subtree(data: dict, root_name: str,
+                 children_keys: list[str] | None = None) -> dict | None:
     """Find and return the subtree rooted at the node with the given name."""
+    if children_keys is None:
+        children_keys = _DEFAULT_CHILDREN_KEYS
     if data["name"] == root_name:
         return data
-    for child in data.get("functions", []):
-        result = find_subtree(child, root_name)
-        if result is not None:
-            return result
+    for key in children_keys:
+        for child in data.get(key, []):
+            result = find_subtree(child, root_name, children_keys)
+            if result is not None:
+                return result
     return None
 
 
-def filter_tree(data: dict, filters: list[str], include_descendants: bool) -> dict:
-    """Return a pruned copy of the tree containing only matching functions and their ancestors.
+def filter_tree(data: dict, filters: list[str], include_descendants: bool,
+                children_keys: list[str] | None = None) -> dict:
+    """Return a pruned copy of the tree containing only matching nodes and their ancestors.
 
-    A function matches if any filter regex matches its name via re.search().
+    A node matches if any filter regex matches its name via re.search().
     The root node is always included. Intermediary nodes on the path from root
     to a matched node are included to keep the tree connected.
     If include_descendants is True, all descendants of matched nodes are also included.
     """
+    if children_keys is None:
+        children_keys = _DEFAULT_CHILDREN_KEYS
     compiled = [re.compile(f, re.IGNORECASE) for f in filters]
 
     def matches(name: str) -> bool:
@@ -54,22 +64,24 @@ def filter_tree(data: dict, filters: list[str], include_descendants: bool) -> di
     def prune(node: dict) -> dict | None:
         """Return a pruned copy of node, or None if it should be excluded."""
         node_matched = matches(node["name"])
-        children = node.get("functions", [])
 
         if node_matched and include_descendants:
             # Include this node and all descendants unchanged
             return dict(node)
 
-        pruned_children = []
-        for child in children:
-            pruned = prune(child)
-            if pruned is not None:
-                pruned_children.append(pruned)
+        pruned_by_key: dict[str, list[dict]] = {}
+        for key in children_keys:
+            pruned_list = []
+            for child in node.get(key, []):
+                pruned = prune(child)
+                if pruned is not None:
+                    pruned_list.append(pruned)
+            if pruned_list:
+                pruned_by_key[key] = pruned_list
 
-        if node_matched or pruned_children:
-            result = {k: v for k, v in node.items() if k != "functions"}
-            if pruned_children:
-                result["functions"] = pruned_children
+        if node_matched or pruned_by_key:
+            result = {k: v for k, v in node.items() if k not in children_keys}
+            result.update(pruned_by_key)
             return result
 
         return None
@@ -78,7 +90,7 @@ def filter_tree(data: dict, filters: list[str], include_descendants: bool) -> di
     result = prune(data)
     if result is None:
         # No matches found — return root only
-        return {k: v for k, v in data.items() if k != "functions"}
+        return {k: v for k, v in data.items() if k not in children_keys}
     return result
 
 
@@ -401,9 +413,28 @@ def process_file(yaml_path: Path, output_dir: Path, root: str | None = None,
                    to_d2, yaml_to_markdown, yaml_to_csv)
 
 
-def process_product_file(yaml_path: Path, output_dir: Path):
+_PRODUCT_CHILDREN_KEYS = ["components", "configuration_items"]
+
+
+def process_product_file(yaml_path: Path, output_dir: Path, root: str | None = None,
+                         filters: list[str] | None = None,
+                         include_descendants: bool = False):
     """Process a single product breakdown YAML file: generate .d2, .svg, .png, .md, and .csv."""
     data = load_yaml(yaml_path)
+
+    if root is not None:
+        subtree = find_subtree(data, root,
+                               children_keys=_PRODUCT_CHILDREN_KEYS)
+        if subtree is None:
+            print(f"Error: root node '{root}' not found in {yaml_path}.",
+                  file=sys.stderr)
+            sys.exit(1)
+        data = subtree
+
+    if filters:
+        data = filter_tree(data, filters, include_descendants,
+                           children_keys=_PRODUCT_CHILDREN_KEYS)
+
     _write_outputs(data, yaml_path, output_dir,
                    product_yaml_to_d2, product_yaml_to_markdown, product_yaml_to_csv)
 
@@ -506,7 +537,15 @@ def _dispatch_yaml_files(input_path: Path, output_dir: Path, process_fn,
 
 def run_product_diagram_command(args):
     """Handle the 'product diagram' subcommand."""
-    _dispatch_yaml_files(args.input, args.output, process_product_file,
+    root = args.root
+    filters = args.filter
+    include_descendants = args.include_descendants
+
+    def process_fn(yaml_path, output_dir):
+        process_product_file(yaml_path, output_dir, root, filters,
+                             include_descendants)
+
+    _dispatch_yaml_files(args.input, args.output, process_fn,
                          "product_breakdown")
 
 
@@ -620,6 +659,25 @@ def main():
         type=Path,
         default=Path("output"),
         help="Output directory for generated files (default: output/).",
+    )
+    product_diagram_parser.add_argument(
+        "--root",
+        type=str,
+        default=None,
+        help="Name of the component or CI to use as the root of the output tree.",
+    )
+    product_diagram_parser.add_argument(
+        "--filter",
+        action="append",
+        default=None,
+        help="Regex pattern to filter nodes by name (repeatable). "
+             "Matches as substring by default; use anchors for exact match.",
+    )
+    product_diagram_parser.add_argument(
+        "--include-descendants",
+        action="store_true",
+        default=False,
+        help="When filtering, include all descendants of matched nodes.",
     )
     product_diagram_parser.set_defaults(func=run_product_diagram_command)
 
