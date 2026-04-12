@@ -113,10 +113,11 @@ run_test_expect_fail "Missing d2" "$IMAGE_NO_D2" "d2" \
 run_test_expect_fail "Missing Python 3.10+" "$IMAGE_OLD_PYTHON" "python" \
     'bash /install.sh --local /artifacts'
 
-run_test_expect_fail "Bad checksum" "$IMAGE_BASE" "checksum" '
+run_test_expect_fail "Bad checksum" "$IMAGE_BASE" "FAILED" '
     mkdir -p /tmp/bad-artifacts &&
     cp /artifacts/*.whl /tmp/bad-artifacts/ &&
-    echo "0000000000000000000000000000000000000000000000000000000000000000  fake.whl" > /tmp/bad-artifacts/fake.whl.sha256 &&
+    whl_name=$(basename /tmp/bad-artifacts/*.whl) &&
+    echo "0000000000000000000000000000000000000000000000000000000000000000  $whl_name" > "/tmp/bad-artifacts/${whl_name}.sha256" &&
     bash /install.sh --local /tmp/bad-artifacts
 '
 
