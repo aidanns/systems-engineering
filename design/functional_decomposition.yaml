@@ -21,13 +21,10 @@ functions:
         description: Convert functional decomposition to a CSV table.
       - name: Generate Product D2
         description: Convert product breakdown to d2 diagram definition.
-        recently_updated: true
       - name: Generate Product Markdown
         description: Convert product breakdown to a markdown table.
-        recently_updated: true
       - name: Generate Product CSV
         description: Convert product breakdown to a CSV table.
-        recently_updated: true
   - name: Rendering
     description: Render d2 definitions to visual formats.
     functions:
@@ -37,11 +34,9 @@ functions:
         description: Render a d2 definition to PNG via the d2 tool.
   - name: Verification
     description: Verify consistency between functional and product breakdowns.
-    recently_updated: true
     functions:
       - name: Verify Function Allocation
         description: Check all leaf functions are allocated to configuration items.
-        recently_updated: true
   - name: CLI Interface
     description: Parse command-line arguments and orchestrate processing.
     functions:

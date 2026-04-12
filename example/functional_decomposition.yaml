@@ -3,37 +3,26 @@ description: An example system demonstrating functional decomposition.
 functions:
   - name: Power Management
     description: Manage the generation, storage, and distribution of power.
-    recently_updated: false
     functions:
       - name: Generate Power
         description: Convert energy sources into electrical power.
-        recently_updated: false
       - name: Store Power
         description: Store electrical power for later use.
-        recently_updated: true
       - name: Distribute Power
         description: Route power to subsystems as needed.
-        recently_updated: false
   - name: Thermal Management
     description: Monitor and control system temperatures.
-    recently_updated: true
     functions:
       - name: Detect Temperature
         description: Measure temperature at key points.
-        recently_updated: false
       - name: Cool Components
         description: Actively cool components that exceed thresholds.
-        recently_updated: true
   - name: Data Processing
     description: Handle the collection, transformation, and storage of data.
-    recently_updated: false
     functions:
       - name: Collect Data
         description: Gather raw data from sensors and inputs.
-        recently_updated: false
       - name: Transform Data
         description: Process and normalize collected data.
-        recently_updated: false
       - name: Store Data
         description: Persist processed data for retrieval.
-        recently_updated: false
