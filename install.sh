@@ -23,6 +23,10 @@ while [[ $# -gt 0 ]]; do
             shift
             ;;
         --local)
+            if [[ $# -lt 2 ]]; then
+                echo "Error: --local requires a directory argument." >&2
+                exit 1
+            fi
             LOCAL_DIR="$2"
             shift 2
             ;;
@@ -82,6 +86,17 @@ if [[ -z "$PYTHON" ]]; then
     echo "  Ubuntu/Debian:  sudo apt install python3 python3-venv" >&2
     echo "  RHEL/Fedora:    sudo dnf install python3" >&2
     echo "  NixOS:          nix-env -iA nixpkgs.python3" >&2
+    exit 1
+fi
+
+# Check venv module is available
+if ! "$PYTHON" -c "import venv" 2>/dev/null; then
+    echo "Error: Python venv module is required but not installed." >&2
+    echo "" >&2
+    echo "Install it for your platform:" >&2
+    echo "  Ubuntu/Debian:  sudo apt install python3-venv" >&2
+    echo "  RHEL/Fedora:    sudo dnf install python3" >&2
+    echo "  NixOS:          included by default with python3" >&2
     exit 1
 fi
 
