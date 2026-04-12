@@ -23,10 +23,11 @@ components:
           - Generate Product Markdown
           - Generate Product CSV
       - name: systems-engineering-cli
-        description: Python module providing CLI argument parsing and file processing orchestration.
+        description: Python module providing CLI argument parsing, file processing orchestration, and test coverage verification.
         functions:
           - Argument Parsing
           - File Processing
+          - Verify Function Test Coverage
       - name: PyYAML
         description: Python library for parsing and emitting YAML.
   - name: Rendering Engine

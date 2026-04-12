@@ -91,6 +91,12 @@ scripts/generate.sh /path/to/output
 
 # Verify using directory mode (finds matching files automatically)
 .venv-$(uname -s)-$(uname -m)/bin/systems-engineering product verify -p example/ -f example/
+
+# Verify all leaf functions have test coverage annotations
+.venv-$(uname -s)-$(uname -m)/bin/systems-engineering function verify example/functional_decomposition.yaml -t tests/
+
+# Verify using directory mode for the functional decomposition
+.venv-$(uname -s)-$(uname -m)/bin/systems-engineering function verify example/ -t tests/
 ```
 
 ## Dev Container

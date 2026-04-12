@@ -16,8 +16,9 @@ Output Generation,Generate Product CSV,Convert product breakdown to a CSV table.
 Systems Engineering CLI,Rendering,Render d2 definitions to visual formats.
 Rendering,Render SVG,Render a d2 definition to SVG via the d2 tool.
 Rendering,Render PNG,Render a d2 definition to PNG via the d2 tool.
-Systems Engineering CLI,Verification,Verify consistency between functional and product breakdowns.
+Systems Engineering CLI,Verification,"Verify consistency between functional and product breakdowns, and test coverage of functions."
 Verification,Verify Function Allocation,Check all leaf functions are allocated to configuration items.
+Verification,Verify Function Test Coverage,Statically scan Python test files for @pytest.mark.covers_function annotations and verify all leaf functions are covered.
 Systems Engineering CLI,CLI Interface,Parse command-line arguments and orchestrate processing.
 CLI Interface,Argument Parsing,Parse command-line arguments and subcommands.
 CLI Interface,File Processing,Orchestrate generation of all output files from a single input or directory.
