@@ -18,6 +18,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Run tests (scripts/test.sh) in devcontainer
+        id: test
         uses: devcontainers/ci@v0.3
         with:
           configFile: .devcontainer/ci/devcontainer.json
@@ -38,14 +39,14 @@ jobs:
           scripts/test-install.sh
 
       - name: Regenerate golden files
-        if: failure()
+        if: failure() && steps.test.conclusion == 'failure'
         uses: devcontainers/ci@v0.3
         with:
           configFile: .devcontainer/ci/devcontainer.json
           runCmd: scripts/regenerate_golden.sh
 
       - name: Upload regenerated golden files
-        if: failure()
+        if: failure() && steps.test.conclusion == 'failure'
         uses: actions/upload-artifact@v4
         with:
           name: golden-files
