@@ -116,18 +116,9 @@ echo "Building wheel..."
 BUILD_TMPDIR="$(mktemp -d)"
 trap 'rm -rf "$BUILD_TMPDIR"' EXIT
 
-"$VENV_DIR/bin/pip" install --quiet build
-"$VENV_DIR/bin/python" -m build --wheel --outdir "$BUILD_TMPDIR" "$REPO_ROOT"
-
-wheel_path="$(ls "$BUILD_TMPDIR"/*.whl)"
-wheel_filename="$(basename "$wheel_path")"
+wheel_filename="$("$REPO_ROOT/scripts/build-wheel.sh" "$BUILD_TMPDIR")"
+wheel_path="$BUILD_TMPDIR/$wheel_filename"
 checksum_path="$BUILD_TMPDIR/${wheel_filename}.sha256"
-
-if command -v sha256sum >/dev/null 2>&1; then
-    (cd "$BUILD_TMPDIR" && sha256sum "$wheel_filename" > "$checksum_path")
-else
-    (cd "$BUILD_TMPDIR" && shasum -a 256 "$wheel_filename" > "$checksum_path")
-fi
 
 echo "  Wheel: $wheel_filename"
 echo "  Checksum: $(cat "$checksum_path")"

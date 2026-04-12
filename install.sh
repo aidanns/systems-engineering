@@ -37,11 +37,16 @@ done
 
 if $UNINSTALL; then
     echo "Uninstalling systems-engineering..."
-    rm -f "$BIN_LINK"
-    rm -rf "$VENV_DIR"
+    if [[ -e "$BIN_LINK" ]]; then
+        rm -f "$BIN_LINK"
+        echo "Removed: $BIN_LINK"
+    fi
+    if [[ -d "$VENV_DIR" ]]; then
+        rm -rf "$VENV_DIR"
+        echo "Removed: $VENV_DIR"
+    fi
     rmdir "$INSTALL_DIR" 2>/dev/null || true
-    echo "Removed: $BIN_LINK"
-    echo "Removed: $VENV_DIR"
+    echo "Done."
     exit 0
 fi
 
@@ -94,8 +99,8 @@ fi
 
 # --- Acquire wheel and checksum ---
 
-TMPDIR="$(mktemp -d)"
-trap 'rm -rf "$TMPDIR"' EXIT
+WORK_DIR="$(mktemp -d)"
+trap 'rm -rf "$WORK_DIR"' EXIT
 
 if [[ -n "$LOCAL_DIR" ]]; then
     # Local mode: copy wheel and checksum from a local directory (used by integration tests).
@@ -110,27 +115,22 @@ if [[ -n "$LOCAL_DIR" ]]; then
         echo "Error: no .sha256 file found in $LOCAL_DIR" >&2
         exit 1
     fi
-    cp "$wheel_path" "$TMPDIR/"
-    cp "$checksum_path" "$TMPDIR/"
+    cp "$wheel_path" "$WORK_DIR/"
+    cp "$checksum_path" "$WORK_DIR/"
 else
     # Remote mode: fetch from GitHub releases.
     : "${GITHUB_TOKEN:?GITHUB_TOKEN must be set (private repo)}"
 
-    # Resolve version
+    # Fetch release metadata
     if [[ -z "$VERSION" ]]; then
-        VERSION=$("$PYTHON" -c "
-import json, sys
-data = json.load(sys.stdin)
-print(data['tag_name'])
-" < <(gh_curl "https://api.github.com/repos/$GITHUB_REPO/releases/latest"))
+        release_json=$(gh_curl "https://api.github.com/repos/$GITHUB_REPO/releases/latest")
+        VERSION=$("$PYTHON" -c "import json,sys; print(json.load(sys.stdin)['tag_name'])" <<< "$release_json")
+    else
+        VERSION="v${VERSION#v}"
+        release_json=$(gh_curl "https://api.github.com/repos/$GITHUB_REPO/releases/tags/$VERSION")
     fi
 
-    # Normalize: ensure leading v
-    VERSION="v${VERSION#v}"
     echo "Installing systems-engineering $VERSION..."
-
-    # Fetch release metadata and extract asset URLs
-    release_json=$(gh_curl "https://api.github.com/repos/$GITHUB_REPO/releases/tags/$VERSION")
 
     asset_info=$("$PYTHON" -c "
 import json, sys
@@ -157,22 +157,22 @@ print(chk[0][1])
     checksum_url=$(echo "$asset_info" | sed -n '4p')
 
     echo "Downloading $wheel_name..."
-    gh_download "$wheel_url" "$TMPDIR/$wheel_name"
-    gh_download "$checksum_url" "$TMPDIR/$checksum_name"
+    gh_download "$wheel_url" "$WORK_DIR/$wheel_name"
+    gh_download "$checksum_url" "$WORK_DIR/$checksum_name"
 fi
 
 # --- Verify checksum ---
 
 echo "Verifying checksum..."
 if command -v sha256sum >/dev/null 2>&1; then
-    (cd "$TMPDIR" && sha256sum -c *.sha256)
+    (cd "$WORK_DIR" && sha256sum -c *.sha256)
 else
-    (cd "$TMPDIR" && shasum -a 256 -c *.sha256)
+    (cd "$WORK_DIR" && shasum -a 256 -c *.sha256)
 fi
 
 # --- Install into venv ---
 
-wheel_file="$(ls "$TMPDIR"/*.whl | head -1)"
+wheel_file="$(ls "$WORK_DIR"/*.whl | head -1)"
 
 echo "Installing into $VENV_DIR..."
 mkdir -p "$INSTALL_DIR"

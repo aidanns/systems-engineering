@@ -16,6 +16,7 @@ CLI tools for generating systems engineering diagrams from YAML definitions, ren
 - `tests/golden/` — Golden files for expected output. Used for exact-match comparison in tests.
 - `scripts/regenerate_golden.sh` — Regenerates golden files in `tests/golden/` from current CLI output.
 - `scripts/generate.sh` — Generates all diagrams from `example/` to `output/`.
+- `scripts/build-wheel.sh` — Builds a wheel and SHA256 checksum file into a given output directory. Used by `release.sh` and `test-install.sh`.
 - `scripts/release.sh` — Creates a release: auto-determines version bump, runs tests, builds a wheel + SHA256 checksum, commits, tags, pushes, and attaches wheel artifacts to the GitHub release.
 - `scripts/test-install.sh` — Docker-based integration tests for `install.sh`. Requires Docker.
 - `install.sh` — Installer script for Linux. Downloads a wheel from GitHub releases and installs into `~/.local/share/systems-engineering/venv` with a symlink at `~/.local/bin/systems-engineering`. Supports `--local <dir>` for testing with local artifacts.

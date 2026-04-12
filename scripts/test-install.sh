@@ -18,19 +18,7 @@ echo "Building wheel for testing..."
 ARTIFACTS_DIR="$(mktemp -d)"
 trap 'rm -rf "$ARTIFACTS_DIR"' EXIT
 
-"$VENV_DIR/bin/pip" install --quiet build
-"$VENV_DIR/bin/python" -m build --wheel --outdir "$ARTIFACTS_DIR" "$REPO_ROOT"
-
-wheel_path="$(ls "$ARTIFACTS_DIR"/*.whl)"
-wheel_filename="$(basename "$wheel_path")"
-checksum_path="$ARTIFACTS_DIR/${wheel_filename}.sha256"
-
-if command -v sha256sum >/dev/null 2>&1; then
-    (cd "$ARTIFACTS_DIR" && sha256sum "$wheel_filename" > "$checksum_path")
-else
-    (cd "$ARTIFACTS_DIR" && shasum -a 256 "$wheel_filename" > "$checksum_path")
-fi
-
+wheel_filename="$("$REPO_ROOT/scripts/build-wheel.sh" "$ARTIFACTS_DIR")"
 echo "  Wheel: $wheel_filename"
 
 # --- Build Docker images ---
