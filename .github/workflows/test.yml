@@ -41,3 +41,15 @@ jobs:
 
       - name: Test
         run: scripts/test.sh
+
+      - name: Regenerate golden files
+        if: failure()
+        run: scripts/regenerate_golden.sh
+
+      - name: Upload regenerated golden files
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: golden-files
+          path: tests/golden/
+          retention-days: 7
