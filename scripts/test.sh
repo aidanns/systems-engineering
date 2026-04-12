@@ -87,3 +87,6 @@ echo "Running pytest..."
 "$VENV_DIR/bin/pytest" "$REPO_ROOT/tests/" -v
 
 echo "All tests passed."
+echo ""
+echo "Note: installer integration tests (require Docker) can be run separately with:"
+echo "  scripts/test-install.sh"

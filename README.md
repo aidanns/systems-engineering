@@ -26,6 +26,31 @@ brew install systems-engineering
 
 Requires a `HOMEBREW_GITHUB_API_TOKEN` environment variable with a GitHub personal access token (repo scope) since this is a private repository.
 
+### Via direct installer (Linux)
+
+Requires a `GITHUB_TOKEN` environment variable with a GitHub personal access token (`repo` scope). Prerequisites: Python 3.10+ and [d2](https://d2lang.com/) must be installed.
+
+Download and inspect the installer, then run it:
+
+```bash
+curl -fsSL -H "Authorization: token $GITHUB_TOKEN" \
+    https://raw.githubusercontent.com/aidanns/systems-engineering/main/install.sh -o install.sh
+GITHUB_TOKEN=$GITHUB_TOKEN bash install.sh
+```
+
+To install a specific version:
+
+```bash
+GITHUB_TOKEN=$GITHUB_TOKEN bash install.sh v1.2.3
+```
+
+To uninstall:
+
+```bash
+bash install.sh --uninstall
+# Or manually: rm -rf ~/.local/share/systems-engineering ~/.local/bin/systems-engineering
+```
+
 ### From source
 
 - Python 3.10+
@@ -135,7 +160,7 @@ This checks that every leaf function has a corresponding allocation in the produ
 
 ## Releasing
 
-Releases are distributed via a private Homebrew tap (`aidanns/tools`).
+Releases are distributed via a private Homebrew tap (`aidanns/tools`) and as wheel artifacts attached to GitHub releases (used by the direct installer).
 
 ### Using the release script
 
