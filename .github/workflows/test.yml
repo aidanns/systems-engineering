@@ -14,9 +14,10 @@ jobs:
       checks: write
       contents: read
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-      - name: Test
+      - name: Run tests (scripts/test.sh) in devcontainer
         uses: devcontainers/ci@v0.3
         with:
           configFile: .devcontainer/ci/devcontainer.json
@@ -24,14 +25,14 @@ jobs:
           env: |
             CI=true
 
-      - name: Test report
+      - name: Generate JUnit Test Report from pytest output
         if: always()
         uses: mikepenz/action-junit-report@v5
         with:
           report_paths: results.xml
           include_passed: true
 
-      - name: Install integration tests
+      - name: Run installation integration tests (scripts/test-install.sh)
         run: |
           scripts/build.sh
           scripts/test-install.sh
