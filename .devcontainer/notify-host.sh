@@ -24,6 +24,6 @@ fi
 payload=$(jq -nc --arg t "${TITLE}" --arg m "${MESSAGE}" '{title:$t, message:$m, sound:true}')
 
 curl -fsS --max-time 2 \
-  -X POST "http://host.docker.internal:6789/notify" \
+  -X POST "http://host.docker.internal:6789/notify-bridge/notify" \
   -H 'content-type: application/json' \
   -d "${payload}" >/dev/null 2>&1 || true
