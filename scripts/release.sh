@@ -4,7 +4,7 @@
 
 set -euo pipefail
 
-REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+source "$(dirname "$0")/env.sh"
 
 # Validate arguments
 case "${1:-}" in
@@ -112,13 +112,36 @@ echo "Pushing to origin..."
 git push origin main --tags
 
 echo ""
+echo "Building wheel..."
+BUILD_TMPDIR="$(mktemp -d)"
+trap 'rm -rf "$BUILD_TMPDIR"' EXIT
+
+"$VENV_DIR/bin/pip" install --quiet build
+"$VENV_DIR/bin/python" -m build --wheel --outdir "$BUILD_TMPDIR" "$REPO_ROOT"
+
+wheel_path="$(ls "$BUILD_TMPDIR"/*.whl)"
+wheel_filename="$(basename "$wheel_path")"
+checksum_path="$BUILD_TMPDIR/${wheel_filename}.sha256"
+
+if command -v sha256sum >/dev/null 2>&1; then
+    (cd "$BUILD_TMPDIR" && sha256sum "$wheel_filename" > "$checksum_path")
+else
+    (cd "$BUILD_TMPDIR" && shasum -a 256 "$wheel_filename" > "$checksum_path")
+fi
+
+echo "  Wheel: $wheel_filename"
+echo "  Checksum: $(cat "$checksum_path")"
+
+echo ""
 echo "Creating GitHub Release..."
 if command -v gh >/dev/null 2>&1; then
     gh release create "$new_tag" \
         --title "$new_tag" \
         --generate-notes \
         --notes-start-tag "$latest_tag" \
-        --latest
+        --latest \
+        "$wheel_path" \
+        "$checksum_path"
 else
     echo "Warning: gh CLI not found; skipping GitHub Release creation."
     echo "Create it manually at https://github.com/aidanns/systems-engineering/releases/new?tag=$new_tag"
@@ -131,3 +154,6 @@ echo "Next steps:"
 echo "  1. Update the Homebrew formula at github.com/aidanns/homebrew-tools"
 echo "     - Change tag: \"$latest_tag\" to tag: \"$new_tag\""
 echo "  2. Test with: brew upgrade systems-engineering"
+echo "  3. Linux users can upgrade via the installer:"
+echo "     curl -fsSL -H \"Authorization: token \$GITHUB_TOKEN\" \\"
+echo "         https://raw.githubusercontent.com/aidanns/systems-engineering/main/install.sh | bash"

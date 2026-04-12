@@ -1,0 +1,16 @@
+FROM ubuntu:20.04
+
+ENV DEBIAN_FRONTEND=noninteractive
+
+RUN apt-get update && apt-get install -y \
+    python3 python3-venv curl \
+    && rm -rf /var/lib/apt/lists/*
+
+# Ubuntu 20.04 ships Python 3.8 — below the 3.10 requirement.
+
+# Install d2 so that error is specifically about Python version
+RUN curl -fsSL https://d2lang.com/install.sh | sh -s --
+
+RUN useradd -m testuser
+USER testuser
+WORKDIR /home/testuser

@@ -16,7 +16,10 @@ CLI tools for generating systems engineering diagrams from YAML definitions, ren
 - `tests/golden/` — Golden files for expected output. Used for exact-match comparison in tests.
 - `scripts/regenerate_golden.sh` — Regenerates golden files in `tests/golden/` from current CLI output.
 - `scripts/generate.sh` — Generates all diagrams from `example/` to `output/`.
-- `scripts/release.sh` — Creates a release: auto-determines version bump, runs tests, commits, tags, and pushes.
+- `scripts/release.sh` — Creates a release: auto-determines version bump, runs tests, builds a wheel + SHA256 checksum, commits, tags, pushes, and attaches wheel artifacts to the GitHub release.
+- `scripts/test-install.sh` — Docker-based integration tests for `install.sh`. Requires Docker.
+- `install.sh` — Installer script for Linux. Downloads a wheel from GitHub releases and installs into `~/.local/share/systems-engineering/venv` with a symlink at `~/.local/bin/systems-engineering`. Supports `--local <dir>` for testing with local artifacts.
+- `tests/install/` — Dockerfiles for installer integration tests (base Ubuntu, no-d2, old-python variants).
 - `design/` — CLI's own functional decomposition and product breakdown (dogfooding). Contains `functional_decomposition.yaml` and `product_breakdown.yaml` sources and generated artefacts (SVG, CSV, etc.) checked into the repo. Keep updated per Conventions.
 
 ## YAML Schema for Functional Decomposition
@@ -128,6 +131,7 @@ The dev container can also be opened directly from VS Code ("Reopen in Container
 ## Releasing
 
 - Run `scripts/release.sh` to create a release. Pass `--yes` to skip the confirmation prompt. It auto-determines the version bump from conventional commit messages (breaking → major, feat → minor, other → patch).
+- The release script builds a wheel and SHA256 checksum file and attaches both to the GitHub release. The `curl | bash` installer downloads from these release assets.
 - Version is defined in `pyproject.toml`. Tags follow `vX.Y.Z` format.
 - The Homebrew formula is at `github.com/aidanns/homebrew-tools/Formula/systems-engineering.rb` and must be updated with the new tag after each release.
 - If Python dependencies change, the formula's `resource` blocks (URLs and SHA256 hashes) must also be updated.
