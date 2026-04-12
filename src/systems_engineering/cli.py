@@ -85,7 +85,7 @@ def is_leaf(function: dict) -> bool:
 
 
 def emit_node(lines: list[str], node_id: str, node: dict, indent: str = "",
-              shape: str | None = None, width: int = 250, height: int | None = None,
+              shape: str | None = None, width: int = 400, height: int | None = None,
               wrap_label: bool = False):
     """Emit d2 lines for a single labeled node."""
     label = re.sub(r'[ -]', r'\\n', node['name']) if wrap_label else node['name']
@@ -101,7 +101,7 @@ def emit_node(lines: list[str], node_id: str, node: dict, indent: str = "",
 
 def emit_container(lines: list[str], parent_id: str, children: list[dict],
                    counter: list[int], prefix: str = "f", shape: str | None = None,
-                   grid_columns: int = 1, node_width: int = 250,
+                   grid_columns: int = 1, node_width: int = 400,
                    node_height: int | None = None, wrap_label: bool = False):
     """Emit a grid container holding child nodes, connected to the parent node."""
     container_id = f"{parent_id}_container"
