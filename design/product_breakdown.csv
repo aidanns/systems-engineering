@@ -1,7 +1,7 @@
 Parent,Name,Type,Description,Functions
 ,Systems Engineering CLI,System,CLI tool for generating systems engineering artefacts from YAML definitions.,
 Systems Engineering CLI,Application Software,Component,Python application and its library dependencies.,
-Application Software,systems-engineering-diagrams,Configuration Item,Python package providing the CLI and all generation/verification logic.,"Find Subtree, Filter Tree, Generate Functional D2, Generate Functional Markdown, Generate Functional CSV, Generate Product D2, Generate Product Markdown, Generate Product CSV, Verify Function Allocation, Argument Parsing, File Processing"
+Application Software,systems-engineering,Configuration Item,Python package providing the CLI and all generation/verification logic.,"Find Subtree, Filter Tree, Generate Functional D2, Generate Functional Markdown, Generate Functional CSV, Generate Product D2, Generate Product Markdown, Generate Product CSV, Verify Function Allocation, Argument Parsing, File Processing"
 Application Software,PyYAML,Configuration Item,Python library for parsing and emitting YAML.,Load YAML
 Systems Engineering CLI,Rendering Engine,Component,External tool for rendering d2 diagram definitions to visual formats.,
 Rendering Engine,d2,Configuration Item,Diagram scripting language tool that renders .d2 files to SVG and PNG.,"Render SVG, Render PNG"

@@ -853,7 +853,9 @@ class TestProductD2Output:
         assert len(comp_width_lines) == 3
 
     def test_ci_labels_use_escaped_newlines(self):
-        # CI names with spaces should use literal \n instead of spaces
+        # CI names with spaces or dashes should use literal \n instead, so that
+        # long names like "systems-engineering" wrap across multiple lines in
+        # the rendered diagram rather than overflowing the CI node.
         in_container = False
         for line in self.lines:
             if '_container: ""' in line:
@@ -862,9 +864,29 @@ class TestProductD2Output:
                 in_container = False
             elif in_container and re.match(r"\s+p\d+:", line):
                 label = line.split(":", 1)[1].strip()
-                if " " in label:
-                    # Multi-word CI names should have \n instead of spaces
-                    assert False, f"CI label '{label}' contains spaces; should use \\n"
+                if " " in label or "-" in label:
+                    assert False, (
+                        f"CI label '{label}' contains spaces or dashes; "
+                        r"should use \n"
+                    )
+
+    def test_ci_labels_wrap_dashes(self):
+        # Hyphenated CI names must render with dashes replaced by literal \n
+        # so names like "systems-engineering" wrap onto multiple lines rather
+        # than overflowing the CI node.
+        data = {
+            "name": "Root",
+            "components": [{
+                "name": "Comp",
+                "configuration_items": [{
+                    "name": "systems-engineering",
+                    "functions": ["F"],
+                }],
+            }],
+        }
+        d2 = product_yaml_to_d2(data)
+        assert r"systems\nengineering" in d2
+        assert "systems-engineering" not in d2
 
     def test_nested_components_support(self):
         """Components with nested sub-components should recurse correctly."""
