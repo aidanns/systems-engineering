@@ -73,6 +73,12 @@ scripts/generate.sh /path/to/output
 # Generate diagrams from all files in a directory
 .venv-$(uname -s)-$(uname -m)/bin/systems-engineering function diagram example/ -o output/
 
+# Highlight updated functions with a red border (case-insensitive regex, repeatable)
+.venv-$(uname -s)-$(uname -m)/bin/systems-engineering function diagram example/functional_decomposition.yaml -o output/ --highlight-updated "Thermal|Store"
+
+# Highlight new functions with a blue border (case-insensitive regex, repeatable)
+.venv-$(uname -s)-$(uname -m)/bin/systems-engineering function diagram example/functional_decomposition.yaml -o output/ --highlight-new "Data"
+
 # Generate product breakdown diagrams from a single file
 .venv-$(uname -s)-$(uname -m)/bin/systems-engineering product diagram product_breakdown/example.yaml -o output/
 

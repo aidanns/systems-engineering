@@ -792,6 +792,23 @@ class TestDirectoryDefaults:
         run_function_command(args)
         assert (output_dir / "functional_decomposition.d2").exists()
 
+    def test_function_command_with_highlights(self, tmp_path):
+        """Highlights flow end-to-end through run_function_command to d2 output."""
+        output_dir = tmp_path / "output"
+        args = argparse.Namespace(
+            input=EXAMPLE_YAML,
+            output=output_dir,
+            root=None,
+            filter=None,
+            include_descendants=False,
+            highlight_updated=["Store Power"],
+            highlight_new=["Data Processing"],
+        )
+        run_function_command(args)
+        d2 = (output_dir / "functional_decomposition.d2").read_text()
+        assert "style.stroke: red" in d2
+        assert "style.stroke: blue" in d2
+
     def test_product_verify_directory_resolves_default_files(self, tmp_path, capsys):
         """When given directories, product verify should resolve default filenames."""
         shutil.copy(EXAMPLE_YAML, tmp_path / "functional_decomposition.yaml")
