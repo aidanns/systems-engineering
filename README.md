@@ -161,6 +161,28 @@ systems-engineering function diagram example/functional_decomposition.yaml -o ou
 
 This produces `.d2`, `.svg`, `.png`, `.md`, and `.csv` files in the output directory.
 
+3. Verify that all leaf functions are covered by test annotations:
+
+```bash
+# Verify test coverage of all leaf functions
+systems-engineering function verify example/functional_decomposition.yaml -t tests/
+
+# Using directory mode (finds functional_decomposition.yaml inside)
+systems-engineering function verify example/ -t tests/
+```
+
+Test files should annotate which functions they cover using `@pytest.mark.covers_function`:
+
+```python
+import pytest
+
+@pytest.mark.covers_function("Generate Power", "Store Power")
+def test_power_functions():
+    ...
+```
+
+The command uses static analysis (AST parsing) to find annotations — it does not execute the tests. It reports which leaf functions are covered, which are missing, and exits non-zero if any are uncovered.
+
 ### Product Breakdown
 
 1. Create a product breakdown YAML file (see `example/` for reference):

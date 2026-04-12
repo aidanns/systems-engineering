@@ -26,9 +26,11 @@ def strip_d2_version(svg_bytes: bytes) -> bytes:
 
 
 from systems_engineering.cli import (
+    collect_covered_functions,
     process_file,
     process_product_file,
     run_function_command,
+    run_function_verify_command,
     run_product_verify_command,
 )
 from systems_engineering.model import (
@@ -87,6 +89,7 @@ def generated_output(tmp_path_factory):
 # --- D2 structural tests ---
 
 
+@pytest.mark.covers_function("Load YAML", "Parse Functional Decomposition", "Generate Functional D2")
 class TestD2Output:
     @pytest.fixture(autouse=True)
     def setup(self, example_data):
@@ -206,6 +209,7 @@ class TestD2Output:
 # --- Markdown structural tests ---
 
 
+@pytest.mark.covers_function("Generate Functional Markdown")
 class TestMarkdownOutput:
     @pytest.fixture(autouse=True)
     def setup(self, example_data):
@@ -240,6 +244,7 @@ class TestMarkdownOutput:
 # --- CSV structural tests ---
 
 
+@pytest.mark.covers_function("Generate Functional CSV")
 class TestCsvOutput:
     @pytest.fixture(autouse=True)
     def setup(self, example_data):
@@ -272,6 +277,7 @@ class TestCsvOutput:
 # --- SVG tests (require d2) ---
 
 
+@pytest.mark.covers_function("Render SVG")
 @pytest.mark.skipif(not HAS_D2, reason="d2 not installed")
 class TestSvgOutput:
     @pytest.fixture(autouse=True)
@@ -303,6 +309,7 @@ class TestSvgOutput:
 # --- PNG tests (require d2) ---
 
 
+@pytest.mark.covers_function("Render PNG")
 @pytest.mark.skipif(not HAS_D2, reason="d2 not installed")
 class TestPngOutput:
     @pytest.fixture(autouse=True)
@@ -321,6 +328,7 @@ class TestPngOutput:
 # --- Function diagram CLI tests ---
 
 
+@pytest.mark.covers_function("Argument Parsing", "File Processing")
 class TestFunctionDiagramCLI:
     def test_function_diagram_subcommand(self, tmp_path):
         cli_path = Path(sys.executable).parent / "systems-engineering"
@@ -371,6 +379,7 @@ class TestFunctionDiagramCLI:
 # --- Product diagram CLI tests ---
 
 
+@pytest.mark.covers_function("Argument Parsing", "File Processing")
 class TestProductDiagramCLI:
     def test_product_diagram_subcommand(self, tmp_path):
         cli_path = Path(sys.executable).parent / "systems-engineering"
@@ -474,6 +483,7 @@ class TestProductDiagramCLI:
 # --- Golden file tests ---
 
 
+@pytest.mark.covers_function("Generate Functional D2", "Generate Functional Markdown", "Generate Functional CSV", "Render SVG", "Render PNG")
 class TestGoldenFiles:
     @pytest.fixture(autouse=True)
     def setup(self, example_data):
@@ -511,6 +521,7 @@ class TestGoldenFiles:
 # --- Product golden file tests ---
 
 
+@pytest.mark.covers_function("Generate Product D2", "Generate Product Markdown", "Generate Product CSV", "Render SVG", "Render PNG")
 class TestProductGoldenFiles:
     @pytest.fixture(autouse=True)
     def setup(self):
@@ -548,6 +559,7 @@ class TestProductGoldenFiles:
 # --- find_subtree tests ---
 
 
+@pytest.mark.covers_function("Find Subtree")
 class TestFindSubtree:
     @pytest.fixture(autouse=True)
     def setup(self, example_data):
@@ -581,6 +593,7 @@ class TestFindSubtree:
 # --- filter_tree tests ---
 
 
+@pytest.mark.covers_function("Filter Tree")
 class TestFilterTree:
     @pytest.fixture(autouse=True)
     def setup(self, example_data):
@@ -661,6 +674,7 @@ class TestFilterTree:
 # --- Product find_subtree tests ---
 
 
+@pytest.mark.covers_function("Find Subtree")
 class TestFindSubtreeProduct:
     @pytest.fixture(autouse=True)
     def setup(self):
@@ -694,6 +708,7 @@ class TestFindSubtreeProduct:
 # --- Product filter_tree tests ---
 
 
+@pytest.mark.covers_function("Filter Tree")
 class TestFilterTreeProduct:
     @pytest.fixture(autouse=True)
     def setup(self):
@@ -775,6 +790,7 @@ def _make_verify_args(fd_path, pb_path):
     )
 
 
+@pytest.mark.covers_function("Verify Function Allocation")
 class TestProductVerify:
     @pytest.fixture(autouse=True)
     def setup(self, example_data):
@@ -920,9 +936,247 @@ class TestProductVerify:
             run_product_verify_command(args)
 
 
+# --- Function verify tests ---
+
+
+def _make_function_verify_args(fd_path, test_dir):
+    """Create a namespace mimicking argparse output for function verify."""
+    return argparse.Namespace(
+        functional_decomposition=fd_path,
+        test_directory=test_dir,
+    )
+
+
+@pytest.mark.covers_function("Verify Function Test Coverage")
+class TestCollectCoveredFunctions:
+    def test_simple_decorator(self, tmp_path):
+        (tmp_path / "test_a.py").write_text(
+            'import pytest\n\n'
+            '@pytest.mark.covers_function("Generate Power")\n'
+            'def test_gen():\n'
+            '    pass\n'
+        )
+        assert collect_covered_functions(tmp_path) == {"Generate Power"}
+
+    def test_multiple_args(self, tmp_path):
+        (tmp_path / "test_a.py").write_text(
+            'import pytest\n\n'
+            '@pytest.mark.covers_function("Generate Power", "Store Power")\n'
+            'def test_both():\n'
+            '    pass\n'
+        )
+        assert collect_covered_functions(tmp_path) == {"Generate Power", "Store Power"}
+
+    def test_on_class(self, tmp_path):
+        (tmp_path / "test_a.py").write_text(
+            'import pytest\n\n'
+            '@pytest.mark.covers_function("Cool Components")\n'
+            'class TestCool:\n'
+            '    def test_it(self):\n'
+            '        pass\n'
+        )
+        assert collect_covered_functions(tmp_path) == {"Cool Components"}
+
+    def test_on_async_function(self, tmp_path):
+        (tmp_path / "test_a.py").write_text(
+            'import pytest\n\n'
+            '@pytest.mark.covers_function("Collect Data")\n'
+            'async def test_async():\n'
+            '    pass\n'
+        )
+        assert collect_covered_functions(tmp_path) == {"Collect Data"}
+
+    def test_no_annotations(self, tmp_path):
+        (tmp_path / "test_a.py").write_text(
+            'def test_plain():\n'
+            '    pass\n'
+        )
+        assert collect_covered_functions(tmp_path) == set()
+
+    def test_ignores_syntax_errors(self, tmp_path, capsys):
+        (tmp_path / "bad.py").write_text("def foo(:\n")
+        (tmp_path / "test_good.py").write_text(
+            'import pytest\n\n'
+            '@pytest.mark.covers_function("Store Data")\n'
+            'def test_ok():\n'
+            '    pass\n'
+        )
+        result = collect_covered_functions(tmp_path)
+        assert result == {"Store Data"}
+        captured = capsys.readouterr()
+        assert "Warning: skipping" in captured.err
+        assert "bad.py" in captured.err
+
+    def test_recursive_subdirectories(self, tmp_path):
+        sub = tmp_path / "sub"
+        sub.mkdir()
+        (sub / "test_nested.py").write_text(
+            'import pytest\n\n'
+            '@pytest.mark.covers_function("Transform Data")\n'
+            'def test_nested():\n'
+            '    pass\n'
+        )
+        assert collect_covered_functions(tmp_path) == {"Transform Data"}
+
+    def test_multiple_files(self, tmp_path):
+        (tmp_path / "test_a.py").write_text(
+            'import pytest\n\n'
+            '@pytest.mark.covers_function("Generate Power")\n'
+            'def test_a():\n'
+            '    pass\n'
+        )
+        (tmp_path / "test_b.py").write_text(
+            'import pytest\n\n'
+            '@pytest.mark.covers_function("Store Power")\n'
+            'def test_b():\n'
+            '    pass\n'
+        )
+        assert collect_covered_functions(tmp_path) == {"Generate Power", "Store Power"}
+
+    def test_stacked_decorators(self, tmp_path):
+        """Multiple @pytest.mark.covers_function decorators on the same function are all collected."""
+        (tmp_path / "test_a.py").write_text(
+            'import pytest\n\n'
+            '@pytest.mark.covers_function("Generate Power")\n'
+            '@pytest.mark.covers_function("Store Power")\n'
+            'def test_both():\n'
+            '    pass\n'
+        )
+        assert collect_covered_functions(tmp_path) == {"Generate Power", "Store Power"}
+
+    def test_bare_decorator_without_call_is_ignored(self, tmp_path):
+        """@pytest.mark.covers_function without parentheses is not collected."""
+        (tmp_path / "test_a.py").write_text(
+            'import pytest\n\n'
+            '@pytest.mark.covers_function\n'
+            'def test_bare():\n'
+            '    pass\n'
+        )
+        assert collect_covered_functions(tmp_path) == set()
+
+
+@pytest.mark.covers_function("Verify Function Test Coverage")
+class TestFunctionVerify:
+    def _write_all_covered_tests(self, test_dir):
+        """Write test files that cover all 8 leaf functions from the example FD."""
+        test_dir.mkdir(exist_ok=True)
+        (test_dir / "test_power.py").write_text(
+            'import pytest\n\n'
+            '@pytest.mark.covers_function("Generate Power", "Store Power", "Distribute Power")\n'
+            'def test_power():\n'
+            '    pass\n'
+        )
+        (test_dir / "test_thermal.py").write_text(
+            'import pytest\n\n'
+            '@pytest.mark.covers_function("Detect Temperature", "Cool Components")\n'
+            'def test_thermal():\n'
+            '    pass\n'
+        )
+        (test_dir / "test_data.py").write_text(
+            'import pytest\n\n'
+            '@pytest.mark.covers_function("Collect Data", "Transform Data", "Store Data")\n'
+            'def test_data():\n'
+            '    pass\n'
+        )
+
+    def test_all_covered(self, tmp_path, capsys):
+        test_dir = tmp_path / "tests"
+        self._write_all_covered_tests(test_dir)
+        args = _make_function_verify_args(EXAMPLE_YAML, test_dir)
+        run_function_verify_command(args)
+        captured = capsys.readouterr()
+        assert "\u2705 All leaf functions covered by tests. (8/8)" in captured.out
+
+    def test_some_uncovered(self, tmp_path, capsys):
+        test_dir = tmp_path / "tests"
+        test_dir.mkdir()
+        (test_dir / "test_partial.py").write_text(
+            'import pytest\n\n'
+            '@pytest.mark.covers_function("Generate Power")\n'
+            'def test_partial():\n'
+            '    pass\n'
+        )
+        args = _make_function_verify_args(EXAMPLE_YAML, test_dir)
+        with pytest.raises(SystemExit) as exc_info:
+            run_function_verify_command(args)
+        assert exc_info.value.code == 1
+        captured = capsys.readouterr()
+        assert "\u26a0\ufe0f Some functions not covered by tests:" in captured.out
+        assert "Store Power" in captured.out
+        assert "Cool Components" in captured.out
+        assert "(1/8 covered)" in captured.out
+
+    def test_uncovered_are_sorted(self, tmp_path, capsys):
+        test_dir = tmp_path / "tests"
+        test_dir.mkdir()
+        (test_dir / "test_empty.py").write_text("def test_nothing(): pass\n")
+        args = _make_function_verify_args(EXAMPLE_YAML, test_dir)
+        with pytest.raises(SystemExit):
+            run_function_verify_command(args)
+        captured = capsys.readouterr()
+        msg = captured.out.strip()
+        # Extract names between the colon and the count parenthetical
+        names_part = msg.split(": ", 1)[1].rsplit(" (", 1)[0]
+        names = [n.strip() for n in names_part.split(",")]
+        assert names == sorted(names)
+
+    def test_extra_annotations_warns(self, tmp_path, capsys):
+        test_dir = tmp_path / "tests"
+        self._write_all_covered_tests(test_dir)
+        (test_dir / "test_extra.py").write_text(
+            'import pytest\n\n'
+            '@pytest.mark.covers_function("Nonexistent Function")\n'
+            'def test_extra():\n'
+            '    pass\n'
+        )
+        args = _make_function_verify_args(EXAMPLE_YAML, test_dir)
+        run_function_verify_command(args)
+        captured = capsys.readouterr()
+        assert "\u2705 All leaf functions covered by tests." in captured.out
+        assert "Nonexistent Function" in captured.err
+        assert "not in functional decomposition" in captured.err
+
+    def test_empty_fd_exits(self, tmp_path):
+        empty_fd = {"name": "Empty System"}
+        fd_path = tmp_path / "empty_fd.yaml"
+        fd_path.write_text(yaml.dump(empty_fd))
+        test_dir = tmp_path / "tests"
+        test_dir.mkdir()
+        args = _make_function_verify_args(fd_path, test_dir)
+        with pytest.raises(SystemExit) as exc_info:
+            run_function_verify_command(args)
+        assert exc_info.value.code == 1
+
+    def test_nonexistent_fd_exits(self, tmp_path):
+        test_dir = tmp_path / "tests"
+        test_dir.mkdir()
+        args = _make_function_verify_args(tmp_path / "nonexistent.yaml", test_dir)
+        with pytest.raises(SystemExit):
+            run_function_verify_command(args)
+
+    def test_nonexistent_test_dir_exits(self, tmp_path):
+        args = _make_function_verify_args(EXAMPLE_YAML, tmp_path / "nonexistent")
+        with pytest.raises(SystemExit):
+            run_function_verify_command(args)
+
+    def test_directory_mode_fd(self, tmp_path, capsys):
+        """When given a directory as the FD path, resolves to functional_decomposition.yaml."""
+        import shutil
+        fd_dir = tmp_path / "fd"
+        fd_dir.mkdir()
+        shutil.copy(EXAMPLE_YAML, fd_dir / "functional_decomposition.yaml")
+        test_dir = tmp_path / "tests"
+        self._write_all_covered_tests(test_dir)
+        args = _make_function_verify_args(fd_dir, test_dir)
+        run_function_verify_command(args)
+        captured = capsys.readouterr()
+        assert "\u2705 All leaf functions covered by tests." in captured.out
+
+
 # --- version flag tests ---
 
 
+@pytest.mark.covers_function("Argument Parsing")
 class TestVersion:
     def test_version_flag(self):
         cli_path = Path(sys.executable).parent / "systems-engineering"
@@ -936,6 +1190,7 @@ class TestVersion:
         assert expected_version in result.stdout
 
 
+@pytest.mark.covers_function("File Processing")
 class TestDirectoryDefaults:
     def test_function_command_directory_without_default_file_exits(self, tmp_path):
         """When given a directory without functional_decomposition.yaml, should exit with error."""
@@ -1002,6 +1257,7 @@ class TestDirectoryDefaults:
 # --- Product D2 output tests ---
 
 
+@pytest.mark.covers_function("Load YAML", "Parse Product Breakdown", "Generate Product D2")
 class TestProductD2Output:
     @pytest.fixture(autouse=True)
     def setup(self):
@@ -1155,6 +1411,7 @@ class TestProductD2Output:
 # --- Product Markdown structural tests ---
 
 
+@pytest.mark.covers_function("Generate Product Markdown")
 class TestProductMarkdownOutput:
     @pytest.fixture(autouse=True)
     def setup(self):
@@ -1193,6 +1450,7 @@ class TestProductMarkdownOutput:
 # --- Product CSV structural tests ---
 
 
+@pytest.mark.covers_function("Generate Product CSV")
 class TestProductCsvOutput:
     @pytest.fixture(autouse=True)
     def setup(self):
@@ -1239,6 +1497,7 @@ def generated_product_output(tmp_path_factory):
     return tmp_path
 
 
+@pytest.mark.covers_function("File Processing", "Render SVG", "Render PNG")
 class TestProcessProductFile:
     def test_d2_file_exists(self, generated_product_output):
         assert (generated_product_output / "product_breakdown.d2").exists()
@@ -1261,6 +1520,7 @@ class TestProcessProductFile:
 # --- Product SVG tests (require d2) ---
 
 
+@pytest.mark.covers_function("Render SVG")
 @pytest.mark.skipif(not HAS_D2, reason="d2 not installed")
 class TestProductSvgOutput:
     @pytest.fixture(autouse=True)

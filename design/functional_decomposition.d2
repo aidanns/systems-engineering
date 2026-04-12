@@ -84,7 +84,7 @@ f16.width: 400
 root -> f16
 f16_container: "" {
   grid-columns: 1
-  grid-rows: 1
+  grid-rows: 2
   grid-gap: 5
   style: {
     stroke-width: 0
@@ -92,13 +92,15 @@ f16_container: "" {
   }
   f17: Verify Function Allocation
   f17.width: 400
+  f18: Verify Function Test Coverage
+  f18.width: 400
 }
 f16 -> f16_container
 
-f18: CLI Interface
-f18.width: 400
-root -> f18
-f18_container: "" {
+f19: CLI Interface
+f19.width: 400
+root -> f19
+f19_container: "" {
   grid-columns: 1
   grid-rows: 2
   grid-gap: 5
@@ -106,9 +108,9 @@ f18_container: "" {
     stroke-width: 0
     fill: transparent
   }
-  f19: Argument Parsing
-  f19.width: 400
-  f20: File Processing
+  f20: Argument Parsing
   f20.width: 400
+  f21: File Processing
+  f21.width: 400
 }
-f18 -> f18_container
+f19 -> f19_container

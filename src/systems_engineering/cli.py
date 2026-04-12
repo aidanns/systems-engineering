@@ -1,11 +1,13 @@
 #!/usr/bin/env python3
-"""Systems engineering CLI: functional decomposition diagrams and product breakdown verification.
+"""Systems engineering CLI: diagrams, allocation verification, and test coverage checks.
 
 Reads YAML files defining functional hierarchies and product breakdowns,
-generates d2 diagrams, and verifies function-to-CI allocations.
+generates d2 diagrams, verifies function-to-CI allocations, and checks
+test coverage of functions via static analysis of test annotations.
 """
 
 import argparse
+import ast
 import functools
 import importlib.metadata
 import sys
@@ -166,6 +168,80 @@ def run_product_verify_command(args):
         sys.exit(1)
 
 
+def _is_covers_function_decorator(node: ast.expr) -> bool:
+    """Return True if the AST node is a call to pytest.mark.covers_function(...)."""
+    if not isinstance(node, ast.Call):
+        return False
+    func = node.func
+    # Match: pytest.mark.covers_function(...)
+    return (isinstance(func, ast.Attribute) and func.attr == "covers_function"
+            and isinstance(func.value, ast.Attribute) and func.value.attr == "mark"
+            and isinstance(func.value.value, ast.Name) and func.value.value.id == "pytest")
+
+
+def _extract_covered_names(decorator: ast.Call) -> set[str]:
+    """Extract string literal arguments from a covers_function() call."""
+    names: set[str] = set()
+    for arg in decorator.args:
+        if isinstance(arg, ast.Constant) and isinstance(arg.value, str):
+            names.add(arg.value)
+    return names
+
+
+def collect_covered_functions(test_dir: Path) -> set[str]:
+    """Scan Python files for @pytest.mark.covers_function annotations and return covered function names."""
+    covered: set[str] = set()
+    for py_file in sorted(test_dir.rglob("*.py")):
+        try:
+            source = py_file.read_text(encoding="utf-8")
+            tree = ast.parse(source, filename=str(py_file))
+        except (SyntaxError, UnicodeDecodeError) as e:
+            print(f"Warning: skipping {py_file}: {e}", file=sys.stderr)
+            continue
+        for node in ast.walk(tree):
+            if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)):
+                for decorator in node.decorator_list:
+                    if _is_covers_function_decorator(decorator):
+                        covered |= _extract_covered_names(decorator)
+    return covered
+
+
+def run_function_verify_command(args):
+    """Handle the 'function verify' subcommand."""
+    fd_path: Path = resolve_directory_to_file(args.functional_decomposition, "functional_decomposition")
+    test_dir: Path = args.test_directory
+
+    if not fd_path.exists():
+        print(f"Error: {fd_path} does not exist.", file=sys.stderr)
+        sys.exit(1)
+    if not test_dir.is_dir():
+        print(f"Error: {test_dir} is not a directory.", file=sys.stderr)
+        sys.exit(1)
+
+    fd_data = parse_functional_decomposition(load_yaml(fd_path))
+    all_functions = collect_leaf_function_names(fd_data)
+
+    if not all_functions:
+        print("\u26a0\ufe0f No leaf functions found in functional decomposition.", file=sys.stderr)
+        sys.exit(1)
+
+    covered = collect_covered_functions(test_dir)
+
+    unknown = sorted(covered - all_functions)
+    if unknown:
+        print(f"\u26a0\ufe0f Some test annotations reference functions not in functional decomposition: {', '.join(unknown)}", file=sys.stderr)
+
+    uncovered = sorted(all_functions - covered)
+    total = len(all_functions)
+    covered_count = total - len(uncovered)
+
+    if not uncovered:
+        print(f"\u2705 All leaf functions covered by tests. ({covered_count}/{total})")
+    else:
+        print(f"\u26a0\ufe0f Some functions not covered by tests: {', '.join(uncovered)} ({covered_count}/{total} covered)")
+        sys.exit(1)
+
+
 def _dispatch_yaml_files(input_path: Path, output_dir: Path, process_fn,
                          default_stem: str):
     """Validate input, create output dir, and dispatch YAML files to process_fn."""
@@ -287,6 +363,24 @@ def main():
              "Matches as substring by default; use anchors for exact match.",
     )
     function_diagram_parser.set_defaults(func=run_function_command)
+
+    # 'function verify' subcommand
+    function_verify_parser = function_subparsers.add_parser(
+        "verify",
+        help="Verify all leaf functions are covered by test annotations.",
+    )
+    function_verify_parser.add_argument(
+        "functional_decomposition",
+        type=Path,
+        help="Functional decomposition YAML file or directory (expects functional_decomposition.yaml).",
+    )
+    function_verify_parser.add_argument(
+        "-t", "--test-directory",
+        type=Path,
+        required=True,
+        help="Directory containing Python test files with @pytest.mark.covers_function annotations.",
+    )
+    function_verify_parser.set_defaults(func=run_function_verify_command)
 
     # 'product' subcommand group
     product_parser = subparsers.add_parser(

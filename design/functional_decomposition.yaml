@@ -37,10 +37,12 @@ functions:
       - name: Render PNG
         description: Render a d2 definition to PNG via the d2 tool.
   - name: Verification
-    description: Verify consistency between functional and product breakdowns.
+    description: Verify consistency between functional and product breakdowns, and test coverage of functions.
     functions:
       - name: Verify Function Allocation
         description: Check all leaf functions are allocated to configuration items.
+      - name: Verify Function Test Coverage
+        description: Statically scan Python test files for @pytest.mark.covers_function annotations and verify all leaf functions are covered.
   - name: CLI Interface
     description: Parse command-line arguments and orchestrate processing.
     functions:
