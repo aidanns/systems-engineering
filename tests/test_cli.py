@@ -114,18 +114,52 @@ class TestD2Output:
         # Root's direct children should have root -> fN
         assert "root -> f0" in self.d2
 
-    def test_recently_updated_red_stroke(self, all_functions):
-        for _, func in all_functions:
-            if func.get("recently_updated"):
-                name = func["name"]
-                # Find the node ID for this function, then check for red stroke
-                for line in self.lines:
-                    if name in line and ": " in line:
-                        node_id = line.strip().split(":")[0].strip()
-                        assert f"{node_id}.style.stroke: red" in self.d2, (
-                            f"Function '{name}' is recently_updated but no red stroke found"
-                        )
-                        break
+    def test_highlight_updated_red_stroke(self, example_data):
+        d2 = functional_yaml_to_d2(example_data, highlights=[
+            ([re.compile("Store Power")], "red"),
+        ])
+        lines = d2.splitlines()
+        for line in lines:
+            if "Store Power" in line and ": " in line:
+                node_id = line.strip().split(":")[0].strip()
+                assert f"{node_id}.style.stroke: red" in d2
+                break
+
+    def test_highlight_new_blue_stroke(self, example_data):
+        d2 = functional_yaml_to_d2(example_data, highlights=[
+            ([re.compile("Data Processing")], "blue"),
+        ])
+        lines = d2.splitlines()
+        for line in lines:
+            if "Data Processing" in line and ": " in line:
+                node_id = line.strip().split(":")[0].strip()
+                assert f"{node_id}.style.stroke: blue" in d2
+                break
+
+    def test_highlight_no_match_no_stroke(self, example_data):
+        d2 = functional_yaml_to_d2(example_data, highlights=[
+            ([re.compile("Nonexistent")], "red"),
+        ])
+        assert "style.stroke:" not in d2
+
+    def test_highlight_updated_takes_precedence(self, example_data):
+        d2 = functional_yaml_to_d2(example_data, highlights=[
+            ([re.compile("Store Power")], "red"),
+            ([re.compile("Store Power")], "blue"),
+        ])
+        lines = d2.splitlines()
+        for line in lines:
+            if "Store Power" in line and ": " in line:
+                node_id = line.strip().split(":")[0].strip()
+                assert f"{node_id}.style.stroke: red" in d2
+                assert f"{node_id}.style.stroke: blue" not in d2
+                break
+
+    def test_highlight_applies_to_root_node(self, example_data):
+        d2 = functional_yaml_to_d2(example_data, highlights=[
+            ([re.compile("Example System")], "blue"),
+        ])
+        assert "root.style.stroke: blue" in d2
 
     def test_leaf_containers_config(self):
         # Every container should have the correct grid and style config
@@ -537,12 +571,11 @@ class TestFilterTree:
 
     def test_filter_preserves_node_properties(self):
         result = filter_tree(self.data, ["Store Power"], include_descendants=False)
-        # Find Store Power in the result and check recently_updated is preserved
         pm = result["functions"][0]
         assert pm["name"] == "Power Management"
         store = pm["functions"][0]
         assert store["name"] == "Store Power"
-        assert store.get("recently_updated") is True
+        assert store.get("description") == "Store electrical power for later use."
 
     def test_filter_case_insensitive(self):
         result = filter_tree(self.data, ["power"], include_descendants=False)
@@ -736,6 +769,8 @@ class TestDirectoryDefaults:
             root=None,
             filter=None,
             include_descendants=False,
+            highlight_updated=None,
+            highlight_new=None,
         )
         with pytest.raises(SystemExit):
             run_function_command(args)
@@ -751,6 +786,8 @@ class TestDirectoryDefaults:
             root=None,
             filter=None,
             include_descendants=False,
+            highlight_updated=None,
+            highlight_new=None,
         )
         run_function_command(args)
         assert (output_dir / "functional_decomposition.d2").exists()

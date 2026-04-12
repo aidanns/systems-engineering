@@ -7,6 +7,7 @@ generates d2 diagrams, and verifies function-to-CI allocations.
 
 import argparse
 import csv
+import functools
 import importlib.metadata
 import io
 import math
@@ -17,6 +18,8 @@ from collections.abc import Callable
 from pathlib import Path
 
 import yaml
+
+Highlights = list[tuple[list[re.Pattern], str]]
 
 
 def load_yaml(path: Path) -> dict:
@@ -86,7 +89,8 @@ def is_leaf(function: dict) -> bool:
 
 def emit_node(lines: list[str], node_id: str, node: dict, indent: str = "",
               shape: str | None = None, width: int = 400, height: int | None = None,
-              wrap_label: bool = False):
+              wrap_label: bool = False,
+              highlights: Highlights | None = None):
     """Emit d2 lines for a single labeled node."""
     label = re.sub(r'[ -]', r'\\n', node['name']) if wrap_label else node['name']
     lines.append(f"{indent}{node_id}: {label}")
@@ -95,14 +99,18 @@ def emit_node(lines: list[str], node_id: str, node: dict, indent: str = "",
         lines.append(f"{indent}{node_id}.height: {height}")
     if shape:
         lines.append(f"{indent}{node_id}.shape: {shape}")
-    if node.get("recently_updated"):
-        lines.append(f"{indent}{node_id}.style.stroke: red")
+    if highlights:
+        for patterns, color in highlights:
+            if any(p.search(node["name"]) for p in patterns):
+                lines.append(f"{indent}{node_id}.style.stroke: {color}")
+                break
 
 
 def emit_container(lines: list[str], parent_id: str, children: list[dict],
                    counter: list[int], prefix: str = "f", shape: str | None = None,
                    grid_columns: int = 1, node_width: int = 400,
-                   node_height: int | None = None, wrap_label: bool = False):
+                   node_height: int | None = None, wrap_label: bool = False,
+                   highlights: Highlights | None = None):
     """Emit a grid container holding child nodes, connected to the parent node."""
     container_id = f"{parent_id}_container"
     grid_rows = math.ceil(len(children) / grid_columns)
@@ -119,28 +127,30 @@ def emit_container(lines: list[str], parent_id: str, children: list[dict],
         counter[0] += 1
         emit_node(lines, child_id, child, indent="  ", shape=shape,
                   width=node_width, height=node_height,
-                  wrap_label=wrap_label)
+                  wrap_label=wrap_label, highlights=highlights)
     lines.append(f"}}")
     lines.append(f"{parent_id} -> {container_id}")
 
 
-def function_to_d2(function: dict, parent_id: str, lines: list[str], counter: list[int]):
+def function_to_d2(function: dict, parent_id: str, lines: list[str], counter: list[int],
+                   highlights: Highlights | None = None):
     """Recursively convert a function node and its children to d2 lines."""
     node_id = f"f{counter[0]}"
     counter[0] += 1
     children = function.get("functions", [])
 
-    emit_node(lines, node_id, function)
+    emit_node(lines, node_id, function, highlights=highlights)
     lines.append(f"{parent_id} -> {node_id}")
 
     if children and all(is_leaf(c) for c in children):
-        emit_container(lines, node_id, children, counter)
+        emit_container(lines, node_id, children, counter, highlights=highlights)
     else:
         for child in children:
-            function_to_d2(child, node_id, lines, counter)
+            function_to_d2(child, node_id, lines, counter, highlights=highlights)
 
 
-def _emit_d2_preamble(lines: list[str], data: dict):
+def _emit_d2_preamble(lines: list[str], data: dict,
+                      highlights: Highlights | None = None):
     """Emit the common d2 config block, direction, and root node."""
     lines.append("vars: {")
     lines.append("  d2-config: {")
@@ -152,25 +162,26 @@ def _emit_d2_preamble(lines: list[str], data: dict):
     lines.append("")
     lines.append("direction: down")
     lines.append("")
-    emit_node(lines, "root", data)
+    emit_node(lines, "root", data, highlights=highlights)
     lines.append("")
 
 
-def functional_yaml_to_d2(data: dict) -> str:
+def functional_yaml_to_d2(data: dict,
+                          highlights: Highlights | None = None) -> str:
     """Convert a functional decomposition YAML structure to a d2 definition."""
     lines = []
-    _emit_d2_preamble(lines, data)
+    _emit_d2_preamble(lines, data, highlights=highlights)
 
     root_id = "root"
 
     children = data.get("functions", [])
     counter = [0]
     if children and all(is_leaf(c) for c in children):
-        emit_container(lines, root_id, children, counter)
+        emit_container(lines, root_id, children, counter, highlights=highlights)
         lines.append("")
     else:
         for function in children:
-            function_to_d2(function, root_id, lines, counter)
+            function_to_d2(function, root_id, lines, counter, highlights=highlights)
             lines.append("")
 
     return "\n".join(lines)
@@ -351,8 +362,26 @@ def _write_outputs(data: dict, yaml_path: Path, output_dir: Path,
     print(f"Written: {csv_path}")
 
 
+def _build_highlights(highlight_updated: list[str] | None,
+                      highlight_new: list[str] | None) -> Highlights:
+    """Build a list of (compiled_patterns, color) tuples from CLI highlight args.
+
+    Updated (red) is checked before new (blue) so that if a node matches both,
+    the updated highlight takes precedence.
+    """
+    highlights = []
+    if highlight_updated:
+        highlights.append(
+            ([re.compile(p, re.IGNORECASE) for p in highlight_updated], "red"))
+    if highlight_new:
+        highlights.append(
+            ([re.compile(p, re.IGNORECASE) for p in highlight_new], "blue"))
+    return highlights
+
+
 def process_file(yaml_path: Path, output_dir: Path, root: str | None = None,
-                  filters: list[str] | None = None, include_descendants: bool = False):
+                  filters: list[str] | None = None, include_descendants: bool = False,
+                  highlights: Highlights | None = None):
     """Process a single YAML file: generate .d2, .svg, .png, .md, and .csv."""
     data = load_yaml(yaml_path)
 
@@ -366,8 +395,10 @@ def process_file(yaml_path: Path, output_dir: Path, root: str | None = None,
     if filters:
         data = filter_tree(data, filters, include_descendants)
 
+    to_d2 = functools.partial(functional_yaml_to_d2, highlights=highlights)
+
     _write_outputs(data, yaml_path, output_dir,
-                   functional_yaml_to_d2, yaml_to_markdown, yaml_to_csv)
+                   to_d2, yaml_to_markdown, yaml_to_csv)
 
 
 def process_product_file(yaml_path: Path, output_dir: Path):
@@ -484,9 +515,11 @@ def run_function_command(args):
     root = args.root
     filters = args.filter
     include_descendants = args.include_descendants
+    highlights = _build_highlights(args.highlight_updated, args.highlight_new)
 
     def process_fn(yaml_path, output_dir):
-        process_file(yaml_path, output_dir, root, filters, include_descendants)
+        process_file(yaml_path, output_dir, root, filters, include_descendants,
+                     highlights)
 
     _dispatch_yaml_files(args.input, args.output, process_fn,
                          "functional_decomposition")
@@ -546,6 +579,20 @@ def main():
         action="store_true",
         default=False,
         help="When filtering, include all descendants of matched functions.",
+    )
+    function_diagram_parser.add_argument(
+        "--highlight-updated",
+        action="append",
+        default=None,
+        help="Regex pattern to highlight functions with a red border (repeatable). "
+             "Matches as substring by default; use anchors for exact match.",
+    )
+    function_diagram_parser.add_argument(
+        "--highlight-new",
+        action="append",
+        default=None,
+        help="Regex pattern to highlight functions with a blue border (repeatable). "
+             "Matches as substring by default; use anchors for exact match.",
     )
     function_diagram_parser.set_defaults(func=run_function_command)
 

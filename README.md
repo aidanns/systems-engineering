@@ -91,17 +91,13 @@ name: System Name
 functions:
   - name: Function A
     description: Description of Function A.
-    recently_updated: false
     functions:
       - name: Sub-function A1
         description: Description of Sub-function A1.
-        recently_updated: true
       - name: Sub-function A2
         description: Description of Sub-function A2.
-        recently_updated: false
   - name: Function B
     description: Description of Function B.
-    recently_updated: false
 ```
 
 2. Generate diagrams:
@@ -121,6 +117,12 @@ systems-engineering function diagram example/functional_decomposition.yaml -o ou
 
 # Include all descendants of matched functions
 systems-engineering function diagram example/functional_decomposition.yaml -o output/ --filter "function" --include-descendants
+
+# Highlight updated functions with a red border (case-insensitive regex, repeatable)
+systems-engineering function diagram example/functional_decomposition.yaml -o output/ --highlight-updated "Thermal|Store"
+
+# Highlight new functions with a blue border (case-insensitive regex, repeatable)
+systems-engineering function diagram example/functional_decomposition.yaml -o output/ --highlight-new "Data"
 ```
 
 This produces `.d2`, `.svg`, `.png`, `.md`, and `.csv` files in the output directory.
