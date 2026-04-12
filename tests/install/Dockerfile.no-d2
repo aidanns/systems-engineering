@@ -1,7 +1,7 @@
 FROM ubuntu:22.04
 
 RUN apt-get update && apt-get install -y \
-    python3 python3-venv python3-pip curl \
+    python3 python3-venv python3-pip curl make \
     && rm -rf /var/lib/apt/lists/*
 
 # d2 intentionally NOT installed

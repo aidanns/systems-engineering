@@ -3,7 +3,7 @@ FROM ubuntu:20.04
 ENV DEBIAN_FRONTEND=noninteractive
 
 RUN apt-get update && apt-get install -y \
-    python3 python3-venv curl \
+    python3 python3-venv curl make \
     && rm -rf /var/lib/apt/lists/*
 
 # Ubuntu 20.04 ships Python 3.8 — below the 3.10 requirement.
