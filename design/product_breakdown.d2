@@ -16,42 +16,32 @@ p0.width: 400
 root -> p0
 p0_container: "" {
   grid-columns: 3
-  grid-rows: 1
+  grid-rows: 2
   grid-gap: 5
   style: {
     stroke-width: 0
     fill: transparent
   }
-  p1: systems\nengineering
+  p1: systems\nengineering\nmodel
   p1.width: 150
   p1.height: 150
   p1.shape: circle
-  p2: PyYAML
+  p2: systems\nengineering\nrender
   p2.width: 150
   p2.height: 150
   p2.shape: circle
-}
-p0 -> p0_container
-
-p3: Rendering Engine
-p3.width: 400
-root -> p3
-p3_container: "" {
-  grid-columns: 3
-  grid-rows: 1
-  grid-gap: 5
-  style: {
-    stroke-width: 0
-    fill: transparent
-  }
-  p4: d2
+  p3: systems\nengineering\ncli
+  p3.width: 150
+  p3.height: 150
+  p3.shape: circle
+  p4: PyYAML
   p4.width: 150
   p4.height: 150
   p4.shape: circle
 }
-p3 -> p3_container
+p0 -> p0_container
 
-p5: Development Tools
+p5: Rendering Engine
 p5.width: 400
 root -> p5
 p5_container: "" {
@@ -62,13 +52,31 @@ p5_container: "" {
     stroke-width: 0
     fill: transparent
   }
-  p6: pytest
+  p6: d2
   p6.width: 150
   p6.height: 150
   p6.shape: circle
-  p7: yq
-  p7.width: 150
-  p7.height: 150
-  p7.shape: circle
 }
 p5 -> p5_container
+
+p7: Development Tools
+p7.width: 400
+root -> p7
+p7_container: "" {
+  grid-columns: 3
+  grid-rows: 1
+  grid-gap: 5
+  style: {
+    stroke-width: 0
+    fill: transparent
+  }
+  p8: pytest
+  p8.width: 150
+  p8.height: 150
+  p8.shape: circle
+  p9: yq
+  p9.width: 150
+  p9.height: 150
+  p9.shape: circle
+}
+p7 -> p7_container

@@ -4,24 +4,31 @@ components:
   - name: Application Software
     description: Python application and its library dependencies.
     configuration_items:
-      - name: systems-engineering
-        description: Python package providing the CLI and all generation/verification logic.
+      - name: systems-engineering-model
+        description: Python module providing dataclasses and tree operations for the systems engineering data model.
         functions:
+          - Load YAML
+          - Parse Functional Decomposition
+          - Parse Product Breakdown
           - Find Subtree
           - Filter Tree
+          - Verify Function Allocation
+      - name: systems-engineering-render
+        description: Python module providing rendering functions for d2 diagrams, markdown, and CSV output.
+        functions:
           - Generate Functional D2
           - Generate Functional Markdown
           - Generate Functional CSV
           - Generate Product D2
           - Generate Product Markdown
           - Generate Product CSV
-          - Verify Function Allocation
+      - name: systems-engineering-cli
+        description: Python module providing CLI argument parsing and file processing orchestration.
+        functions:
           - Argument Parsing
           - File Processing
       - name: PyYAML
         description: Python library for parsing and emitting YAML.
-        functions:
-          - Load YAML
   - name: Rendering Engine
     description: External tool for rendering d2 diagram definitions to visual formats.
     configuration_items:

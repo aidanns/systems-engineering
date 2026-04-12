@@ -2,6 +2,8 @@ Parent,Function,Description
 ,Systems Engineering CLI,Generate systems engineering artefacts from YAML definitions.
 Systems Engineering CLI,Input Processing,Load and parse YAML definitions.
 Input Processing,Load YAML,Read and parse YAML files from disk.
+Input Processing,Parse Functional Decomposition,Convert raw YAML dict into typed Function tree.
+Input Processing,Parse Product Breakdown,Convert raw YAML dict into typed Component tree.
 Input Processing,Find Subtree,Extract a subtree rooted at a named node.
 Input Processing,Filter Tree,"Prune the tree to matching functions and their ancestors, optionally including all descendants of matched nodes."
 Systems Engineering CLI,Output Generation,Convert parsed data into output formats.

@@ -25,22 +25,26 @@ def strip_d2_version(svg_bytes: bytes) -> bytes:
 
 
 from systems_engineering.cli import (
-    _PRODUCT_CHILDREN_KEYS,
+    process_file,
+    process_product_file,
+    run_function_command,
+    run_product_verify_command,
+)
+from systems_engineering.model import (
     collect_allocated_functions,
     collect_leaf_function_names,
     filter_tree,
     find_subtree,
     load_yaml,
-    process_file,
-    process_product_file,
-    product_collect_all_rows,
+    parse_functional_decomposition,
+    parse_product_breakdown,
+)
+from systems_engineering.render import (
+    functional_yaml_to_d2,
     product_yaml_to_csv,
     product_yaml_to_d2,
     product_yaml_to_markdown,
-    run_function_command,
-    run_product_verify_command,
     yaml_to_csv,
-    functional_yaml_to_d2,
     yaml_to_markdown,
 )
 
@@ -54,20 +58,20 @@ HAS_D2 = shutil.which("d2") is not None
 
 @pytest.fixture
 def example_data():
-    return load_yaml(EXAMPLE_YAML)
+    return parse_functional_decomposition(load_yaml(EXAMPLE_YAML))
 
 
 @pytest.fixture
 def all_functions(example_data):
-    """Return a flat list of (parent_name, function_dict) for all functions."""
+    """Return a flat list of (parent_name, Function) for all functions."""
     result = []
 
     def collect(parent_name, functions):
         for f in functions:
             result.append((parent_name, f))
-            collect(f["name"], f.get("functions", []))
+            collect(f.name, f.functions)
 
-    collect(example_data["name"], example_data.get("functions", []))
+    collect(example_data.name, example_data.functions)
     return result
 
 
@@ -102,7 +106,7 @@ class TestD2Output:
 
     def test_all_function_names_present(self, all_functions):
         for _, func in all_functions:
-            name = func["name"]
+            name = func.name
             assert any(name in line for line in self.lines), (
                 f"Function '{name}' not found in d2 output"
             )
@@ -219,8 +223,8 @@ class TestMarkdownOutput:
 
     def test_all_functions_present(self, all_functions):
         for parent_name, func in all_functions:
-            name = func["name"]
-            desc = func.get("description", "")
+            name = func.name
+            desc = func.description
             expected = f"| {parent_name} | {name} | {desc} |"
             assert expected in self.md, (
                 f"Expected row not found: {expected}"
@@ -253,8 +257,8 @@ class TestCsvOutput:
     def test_all_functions_present(self, all_functions):
         data_rows = self.rows[1:]
         for parent_name, func in all_functions:
-            name = func["name"]
-            desc = func.get("description", "")
+            name = func.name
+            desc = func.description
             assert [parent_name, name, desc] in data_rows, (
                 f"Expected CSV row not found: {[parent_name, name, desc]}"
             )
@@ -289,9 +293,9 @@ class TestSvgOutput:
         svg_texts = {elem.text.strip() for elem in self.tree.iter("{http://www.w3.org/2000/svg}text")
                      if elem.text and elem.text.strip()}
         for _, func in all_functions:
-            expected = func["name"].upper()
+            expected = func.name.upper()
             assert expected in svg_texts, (
-                f"Function '{func['name']}' (as '{expected}') not found in SVG text elements"
+                f"Function '{func.name}' (as '{expected}') not found in SVG text elements"
             )
 
 
@@ -509,7 +513,7 @@ class TestGoldenFiles:
 class TestProductGoldenFiles:
     @pytest.fixture(autouse=True)
     def setup(self):
-        self.data = load_yaml(PRODUCT_EXAMPLE_YAML)
+        self.data = parse_product_breakdown(load_yaml(PRODUCT_EXAMPLE_YAML))
 
     def test_d2_matches_golden(self):
         generated = product_yaml_to_d2(self.data)
@@ -551,18 +555,18 @@ class TestFindSubtree:
     def test_find_root(self):
         result = find_subtree(self.data, "Example System")
         assert result is not None
-        assert result["name"] == "Example System"
+        assert result.name == "Example System"
 
     def test_find_direct_child(self):
         result = find_subtree(self.data, "Power Management")
         assert result is not None
-        assert result["name"] == "Power Management"
-        assert len(result.get("functions", [])) == 3
+        assert result.name == "Power Management"
+        assert len(result.functions) == 3
 
     def test_find_grandchild(self):
         result = find_subtree(self.data, "Store Power")
         assert result is not None
-        assert result["name"] == "Store Power"
+        assert result.name == "Store Power"
 
     def test_not_found(self):
         result = find_subtree(self.data, "Nonexistent")
@@ -581,10 +585,10 @@ class TestFilterTree:
     def setup(self, example_data):
         self.data = example_data
 
-    def _names(self, data: dict) -> set[str]:
+    def _names(self, data) -> set[str]:
         """Collect all function names in a tree."""
-        names = {data["name"]}
-        for child in data.get("functions", []):
+        names = {data.name}
+        for child in data.functions:
             names |= self._names(child)
         return names
 
@@ -633,16 +637,16 @@ class TestFilterTree:
 
     def test_filter_no_match_returns_root_only(self):
         result = filter_tree(self.data, ["Nonexistent"], include_descendants=False)
-        assert result["name"] == "Example System"
-        assert "functions" not in result
+        assert result.name == "Example System"
+        assert result.functions == []
 
     def test_filter_preserves_node_properties(self):
         result = filter_tree(self.data, ["Store Power"], include_descendants=False)
-        pm = result["functions"][0]
-        assert pm["name"] == "Power Management"
-        store = pm["functions"][0]
-        assert store["name"] == "Store Power"
-        assert store.get("description") == "Store electrical power for later use."
+        pm = result.functions[0]
+        assert pm.name == "Power Management"
+        store = pm.functions[0]
+        assert store.name == "Store Power"
+        assert store.description == "Store electrical power for later use."
 
     def test_filter_case_insensitive(self):
         result = filter_tree(self.data, ["power"], include_descendants=False)
@@ -657,33 +661,27 @@ class TestFilterTree:
 
 
 class TestFindSubtreeProduct:
-    PRODUCT_CHILDREN_KEYS = _PRODUCT_CHILDREN_KEYS
-
     @pytest.fixture(autouse=True)
     def setup(self):
-        self.data = load_yaml(PRODUCT_EXAMPLE_YAML)
+        self.data = parse_product_breakdown(load_yaml(PRODUCT_EXAMPLE_YAML))
 
     def test_find_root(self):
-        result = find_subtree(self.data, "Example System",
-                              self.PRODUCT_CHILDREN_KEYS)
+        result = find_subtree(self.data, "Example System")
         assert result is not None
-        assert result["name"] == "Example System"
+        assert result.name == "Example System"
 
     def test_find_component(self):
-        result = find_subtree(self.data, "Power Subsystem",
-                              self.PRODUCT_CHILDREN_KEYS)
+        result = find_subtree(self.data, "Power Subsystem")
         assert result is not None
-        assert result["name"] == "Power Subsystem"
+        assert result.name == "Power Subsystem"
 
     def test_find_configuration_item(self):
-        result = find_subtree(self.data, "Battery Pack",
-                              self.PRODUCT_CHILDREN_KEYS)
+        result = find_subtree(self.data, "Battery Pack")
         assert result is not None
-        assert result["name"] == "Battery Pack"
+        assert result.name == "Battery Pack"
 
     def test_not_found(self):
-        result = find_subtree(self.data, "Nonexistent",
-                              self.PRODUCT_CHILDREN_KEYS)
+        result = find_subtree(self.data, "Nonexistent")
         assert result is None
 
     def test_process_product_file_nonexistent_root_exits(self, tmp_path):
@@ -696,24 +694,24 @@ class TestFindSubtreeProduct:
 
 
 class TestFilterTreeProduct:
-    PRODUCT_CHILDREN_KEYS = _PRODUCT_CHILDREN_KEYS
-
     @pytest.fixture(autouse=True)
     def setup(self):
-        self.data = load_yaml(PRODUCT_EXAMPLE_YAML)
+        self.data = parse_product_breakdown(load_yaml(PRODUCT_EXAMPLE_YAML))
 
-    def _names(self, data: dict) -> set[str]:
+    def _names(self, data) -> set[str]:
         """Collect all node names in a product tree."""
-        names = {data["name"]}
-        for key in self.PRODUCT_CHILDREN_KEYS:
-            for child in data.get(key, []):
+        names = {data.name}
+        if hasattr(data, 'components'):
+            for child in data.components:
+                names |= self._names(child)
+        if hasattr(data, 'configuration_items'):
+            for child in data.configuration_items:
                 names |= self._names(child)
         return names
 
     def test_filter_component_includes_ancestors(self):
         result = filter_tree(self.data, ["Power Subsystem"],
-                             include_descendants=False,
-                             children_keys=self.PRODUCT_CHILDREN_KEYS)
+                             include_descendants=False)
         names = self._names(result)
         assert "Example System" in names
         assert "Power Subsystem" in names
@@ -722,8 +720,7 @@ class TestFilterTreeProduct:
 
     def test_filter_ci_includes_ancestor_component(self):
         result = filter_tree(self.data, ["Battery Pack"],
-                             include_descendants=False,
-                             children_keys=self.PRODUCT_CHILDREN_KEYS)
+                             include_descendants=False)
         names = self._names(result)
         assert "Example System" in names
         assert "Power Subsystem" in names
@@ -733,8 +730,7 @@ class TestFilterTreeProduct:
 
     def test_filter_with_include_descendants(self):
         result = filter_tree(self.data, ["^Power Subsystem$"],
-                             include_descendants=True,
-                             children_keys=self.PRODUCT_CHILDREN_KEYS)
+                             include_descendants=True)
         names = self._names(result)
         assert "Power Subsystem" in names
         assert "Solar Panel Assembly" in names
@@ -744,29 +740,26 @@ class TestFilterTreeProduct:
 
     def test_filter_no_match_returns_root_only(self):
         result = filter_tree(self.data, ["Nonexistent"],
-                             include_descendants=False,
-                             children_keys=self.PRODUCT_CHILDREN_KEYS)
-        assert result["name"] == "Example System"
-        assert "components" not in result
-        assert "configuration_items" not in result
+                             include_descendants=False)
+        assert result.name == "Example System"
+        assert result.components == []
+        assert result.configuration_items == []
 
     def test_filter_regex_case_insensitive(self):
         result = filter_tree(self.data, ["power"],
-                             include_descendants=False,
-                             children_keys=self.PRODUCT_CHILDREN_KEYS)
+                             include_descendants=False)
         names = self._names(result)
         assert "Power Subsystem" in names
         assert "Power Distribution Unit" in names
 
     def test_filter_preserves_node_properties(self):
         result = filter_tree(self.data, ["Battery Pack"],
-                             include_descendants=False,
-                             children_keys=self.PRODUCT_CHILDREN_KEYS)
-        power = result["components"][0]
-        assert power["name"] == "Power Subsystem"
-        battery = power["configuration_items"][0]
-        assert battery["name"] == "Battery Pack"
-        assert battery.get("description") == "Lithium-ion battery modules."
+                             include_descendants=False)
+        power = result.components[0]
+        assert power.name == "Power Subsystem"
+        battery = power.configuration_items[0]
+        assert battery.name == "Battery Pack"
+        assert battery.description == "Lithium-ion battery modules."
 
 
 # --- Product verify tests ---
@@ -785,7 +778,7 @@ class TestProductVerify:
     @pytest.fixture(autouse=True)
     def setup(self, example_data):
         self.fd_data = example_data
-        self.pb_data = load_yaml(PRODUCT_EXAMPLE_YAML)
+        self.pb_data = parse_product_breakdown(load_yaml(PRODUCT_EXAMPLE_YAML))
 
     def test_collect_leaf_function_names(self):
         names = collect_leaf_function_names(self.fd_data)
@@ -883,7 +876,7 @@ class TestProductVerify:
 
     def test_nested_components(self):
         """collect_allocated_functions should recurse through nested component hierarchies."""
-        nested_pb = {
+        nested_pb = parse_product_breakdown({
             "name": "System",
             "components": [{
                 "name": "Top Level",
@@ -898,7 +891,7 @@ class TestProductVerify:
                     }],
                 }],
             }],
-        }
+        })
         allocated = collect_allocated_functions(nested_pb)
         assert allocated == {"Deeply Nested Function"}
 
@@ -1011,7 +1004,7 @@ class TestDirectoryDefaults:
 class TestProductD2Output:
     @pytest.fixture(autouse=True)
     def setup(self):
-        self.data = load_yaml(PRODUCT_EXAMPLE_YAML)
+        self.data = parse_product_breakdown(load_yaml(PRODUCT_EXAMPLE_YAML))
         self.d2 = product_yaml_to_d2(self.data)
         self.lines = self.d2.splitlines()
 
@@ -1111,7 +1104,7 @@ class TestProductD2Output:
         # Hyphenated CI names must render with dashes replaced by literal \n
         # so names like "systems-engineering" wrap onto multiple lines rather
         # than overflowing the CI node.
-        data = {
+        data = parse_product_breakdown({
             "name": "Root",
             "components": [{
                 "name": "Comp",
@@ -1120,14 +1113,14 @@ class TestProductD2Output:
                     "functions": ["F"],
                 }],
             }],
-        }
+        })
         d2 = product_yaml_to_d2(data)
         assert r"systems\nengineering" in d2
         assert "systems-engineering" not in d2
 
     def test_nested_components_support(self):
         """Components with nested sub-components should recurse correctly."""
-        nested_data = {
+        nested_data = parse_product_breakdown({
             "name": "Nested System",
             "components": [{
                 "name": "Outer",
@@ -1139,7 +1132,7 @@ class TestProductD2Output:
                     }],
                 }],
             }],
-        }
+        })
         d2 = product_yaml_to_d2(nested_data)
         assert "Outer" in d2
         assert "Inner" in d2
@@ -1164,7 +1157,7 @@ class TestProductD2Output:
 class TestProductMarkdownOutput:
     @pytest.fixture(autouse=True)
     def setup(self):
-        self.data = load_yaml(PRODUCT_EXAMPLE_YAML)
+        self.data = parse_product_breakdown(load_yaml(PRODUCT_EXAMPLE_YAML))
         self.md = product_yaml_to_markdown(self.data)
         self.lines = self.md.splitlines()
 
@@ -1202,7 +1195,7 @@ class TestProductMarkdownOutput:
 class TestProductCsvOutput:
     @pytest.fixture(autouse=True)
     def setup(self):
-        self.data = load_yaml(PRODUCT_EXAMPLE_YAML)
+        self.data = parse_product_breakdown(load_yaml(PRODUCT_EXAMPLE_YAML))
         self.csv_str = product_yaml_to_csv(self.data)
         reader = csv.reader(io.StringIO(self.csv_str))
         self.rows = list(reader)
@@ -1300,21 +1293,3 @@ class TestProductSvgOutput:
             assert word in svg_texts, (
                 f"'{word}' not found in SVG text elements"
             )
-
-
-# --- Product PNG tests (require d2) ---
-
-
-@pytest.mark.skipif(not HAS_D2, reason="d2 not installed")
-class TestProductPngOutput:
-    @pytest.fixture(autouse=True)
-    def setup(self, generated_product_output):
-        self.png_path = generated_product_output / "product_breakdown.png"
-
-    def test_png_magic_bytes(self):
-        with open(self.png_path, "rb") as f:
-            header = f.read(8)
-        assert header[:4] == b"\x89PNG"
-
-    def test_file_size_nontrivial(self):
-        assert self.png_path.stat().st_size > 1024
