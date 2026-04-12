@@ -32,10 +32,9 @@ jobs:
           include_passed: true
 
       - name: Install integration tests
-        uses: devcontainers/ci@v0.3
-        with:
-          configFile: .devcontainer/ci/devcontainer.json
-          runCmd: scripts/test-install.sh
+        run: |
+          scripts/build.sh
+          scripts/test-install.sh
 
       - name: Regenerate golden files
         if: failure()
