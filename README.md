@@ -2,10 +2,6 @@
 
 Tools for generating systems engineering diagrams from structured data definitions.
 
-## Author
-
-Aidan Nagorcka-Smith (aidanns@gmail.com)
-
 ## Scope
 
 This project provides CLI tools to generate systems engineering diagrams from YAML definitions. Diagrams are rendered using the [d2](https://d2lang.com/) framework.
@@ -228,3 +224,11 @@ The script runs tests, updates `pyproject.toml`, commits, tags, and pushes. Afte
    brew upgrade systems-engineering
    systems-engineering --help
    ```
+
+## License
+
+MIT. See [LICENSE](LICENSE) for details.
+
+## Author
+
+Aidan Nagorcka-Smith (aidanns@gmail.com)
