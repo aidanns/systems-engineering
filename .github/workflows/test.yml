@@ -1,0 +1,35 @@
+name: test
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+jobs:
+  test:
+    runs-on: ubuntu-24.04-arm
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Test
+        uses: devcontainers/ci@v0.3
+        with:
+          configFile: .devcontainer/ci/devcontainer.json
+          runCmd: scripts/test.sh
+
+      - name: Regenerate golden files
+        if: failure()
+        uses: devcontainers/ci@v0.3
+        with:
+          configFile: .devcontainer/ci/devcontainer.json
+          runCmd: scripts/regenerate_golden.sh
+
+      - name: Upload regenerated golden files
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: golden-files
+          path: tests/golden/
+          retention-days: 7

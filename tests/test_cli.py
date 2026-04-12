@@ -4,6 +4,7 @@ import argparse
 import csv
 import importlib.metadata
 import io
+import platform
 import re
 import shutil
 import subprocess
@@ -500,7 +501,7 @@ class TestGoldenFiles:
         assert generated == golden, "SVG output does not match golden file"
 
     @pytest.mark.skipif(not HAS_D2, reason="d2 not installed")
-    @pytest.mark.skipif(sys.platform != "linux", reason="PNG golden files are canonical on Linux")
+    @pytest.mark.skipif(sys.platform != "linux" or platform.machine() != "aarch64", reason="PNG golden files are canonical on Linux aarch64")
     def test_png_matches_golden(self, generated_output):
         generated = (generated_output / "functional_decomposition.png").read_bytes()
         golden = (GOLDEN_DIR / "functional_decomposition.png").read_bytes()
@@ -537,7 +538,7 @@ class TestProductGoldenFiles:
         assert generated == golden, "Product SVG output does not match golden file"
 
     @pytest.mark.skipif(not HAS_D2, reason="d2 not installed")
-    @pytest.mark.skipif(sys.platform != "linux", reason="PNG golden files are canonical on Linux")
+    @pytest.mark.skipif(sys.platform != "linux" or platform.machine() != "aarch64", reason="PNG golden files are canonical on Linux aarch64")
     def test_png_matches_golden(self, generated_product_output):
         generated = (generated_product_output / "product_breakdown.png").read_bytes()
         golden = (GOLDEN_DIR / "product_breakdown.png").read_bytes()
