@@ -89,6 +89,7 @@ def generated_output(tmp_path_factory):
 # --- D2 structural tests ---
 
 
+@pytest.mark.covers_function("Load YAML", "Parse Functional Decomposition", "Generate Functional D2")
 class TestD2Output:
     @pytest.fixture(autouse=True)
     def setup(self, example_data):
@@ -208,6 +209,7 @@ class TestD2Output:
 # --- Markdown structural tests ---
 
 
+@pytest.mark.covers_function("Generate Functional Markdown")
 class TestMarkdownOutput:
     @pytest.fixture(autouse=True)
     def setup(self, example_data):
@@ -242,6 +244,7 @@ class TestMarkdownOutput:
 # --- CSV structural tests ---
 
 
+@pytest.mark.covers_function("Generate Functional CSV")
 class TestCsvOutput:
     @pytest.fixture(autouse=True)
     def setup(self, example_data):
@@ -274,6 +277,7 @@ class TestCsvOutput:
 # --- SVG tests (require d2) ---
 
 
+@pytest.mark.covers_function("Render SVG")
 @pytest.mark.skipif(not HAS_D2, reason="d2 not installed")
 class TestSvgOutput:
     @pytest.fixture(autouse=True)
@@ -305,6 +309,7 @@ class TestSvgOutput:
 # --- PNG tests (require d2) ---
 
 
+@pytest.mark.covers_function("Render PNG")
 @pytest.mark.skipif(not HAS_D2, reason="d2 not installed")
 class TestPngOutput:
     @pytest.fixture(autouse=True)
@@ -323,6 +328,7 @@ class TestPngOutput:
 # --- Function diagram CLI tests ---
 
 
+@pytest.mark.covers_function("Argument Parsing", "File Processing")
 class TestFunctionDiagramCLI:
     def test_function_diagram_subcommand(self, tmp_path):
         cli_path = Path(sys.executable).parent / "systems-engineering"
@@ -373,6 +379,7 @@ class TestFunctionDiagramCLI:
 # --- Product diagram CLI tests ---
 
 
+@pytest.mark.covers_function("Argument Parsing", "File Processing")
 class TestProductDiagramCLI:
     def test_product_diagram_subcommand(self, tmp_path):
         cli_path = Path(sys.executable).parent / "systems-engineering"
@@ -476,6 +483,7 @@ class TestProductDiagramCLI:
 # --- Golden file tests ---
 
 
+@pytest.mark.covers_function("Generate Functional D2", "Generate Functional Markdown", "Generate Functional CSV", "Render SVG", "Render PNG")
 class TestGoldenFiles:
     @pytest.fixture(autouse=True)
     def setup(self, example_data):
@@ -513,6 +521,7 @@ class TestGoldenFiles:
 # --- Product golden file tests ---
 
 
+@pytest.mark.covers_function("Generate Product D2", "Generate Product Markdown", "Generate Product CSV", "Render SVG", "Render PNG")
 class TestProductGoldenFiles:
     @pytest.fixture(autouse=True)
     def setup(self):
@@ -550,6 +559,7 @@ class TestProductGoldenFiles:
 # --- find_subtree tests ---
 
 
+@pytest.mark.covers_function("Find Subtree")
 class TestFindSubtree:
     @pytest.fixture(autouse=True)
     def setup(self, example_data):
@@ -583,6 +593,7 @@ class TestFindSubtree:
 # --- filter_tree tests ---
 
 
+@pytest.mark.covers_function("Filter Tree")
 class TestFilterTree:
     @pytest.fixture(autouse=True)
     def setup(self, example_data):
@@ -663,6 +674,7 @@ class TestFilterTree:
 # --- Product find_subtree tests ---
 
 
+@pytest.mark.covers_function("Find Subtree")
 class TestFindSubtreeProduct:
     @pytest.fixture(autouse=True)
     def setup(self):
@@ -696,6 +708,7 @@ class TestFindSubtreeProduct:
 # --- Product filter_tree tests ---
 
 
+@pytest.mark.covers_function("Filter Tree")
 class TestFilterTreeProduct:
     @pytest.fixture(autouse=True)
     def setup(self):
@@ -777,6 +790,7 @@ def _make_verify_args(fd_path, pb_path):
     )
 
 
+@pytest.mark.covers_function("Verify Function Allocation")
 class TestProductVerify:
     @pytest.fixture(autouse=True)
     def setup(self, example_data):
@@ -933,6 +947,7 @@ def _make_function_verify_args(fd_path, test_dir):
     )
 
 
+@pytest.mark.covers_function("Verify Function Test Coverage")
 class TestCollectCoveredFunctions:
     def test_simple_decorator(self, tmp_path):
         (tmp_path / "test_a.py").write_text(
@@ -1040,6 +1055,7 @@ class TestCollectCoveredFunctions:
         assert collect_covered_functions(tmp_path) == set()
 
 
+@pytest.mark.covers_function("Verify Function Test Coverage")
 class TestFunctionVerify:
     def _write_all_covered_tests(self, test_dir):
         """Write test files that cover all 8 leaf functions from the example FD."""
@@ -1160,6 +1176,7 @@ class TestFunctionVerify:
 # --- version flag tests ---
 
 
+@pytest.mark.covers_function("Argument Parsing")
 class TestVersion:
     def test_version_flag(self):
         cli_path = Path(sys.executable).parent / "systems-engineering"
@@ -1173,6 +1190,7 @@ class TestVersion:
         assert expected_version in result.stdout
 
 
+@pytest.mark.covers_function("File Processing")
 class TestDirectoryDefaults:
     def test_function_command_directory_without_default_file_exits(self, tmp_path):
         """When given a directory without functional_decomposition.yaml, should exit with error."""
@@ -1239,6 +1257,7 @@ class TestDirectoryDefaults:
 # --- Product D2 output tests ---
 
 
+@pytest.mark.covers_function("Load YAML", "Parse Product Breakdown", "Generate Product D2")
 class TestProductD2Output:
     @pytest.fixture(autouse=True)
     def setup(self):
@@ -1392,6 +1411,7 @@ class TestProductD2Output:
 # --- Product Markdown structural tests ---
 
 
+@pytest.mark.covers_function("Generate Product Markdown")
 class TestProductMarkdownOutput:
     @pytest.fixture(autouse=True)
     def setup(self):
@@ -1430,6 +1450,7 @@ class TestProductMarkdownOutput:
 # --- Product CSV structural tests ---
 
 
+@pytest.mark.covers_function("Generate Product CSV")
 class TestProductCsvOutput:
     @pytest.fixture(autouse=True)
     def setup(self):
@@ -1476,6 +1497,7 @@ def generated_product_output(tmp_path_factory):
     return tmp_path
 
 
+@pytest.mark.covers_function("File Processing", "Render SVG", "Render PNG")
 class TestProcessProductFile:
     def test_d2_file_exists(self, generated_product_output):
         assert (generated_product_output / "product_breakdown.d2").exists()
@@ -1498,6 +1520,7 @@ class TestProcessProductFile:
 # --- Product SVG tests (require d2) ---
 
 
+@pytest.mark.covers_function("Render SVG")
 @pytest.mark.skipif(not HAS_D2, reason="d2 not installed")
 class TestProductSvgOutput:
     @pytest.fixture(autouse=True)

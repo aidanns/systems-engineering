@@ -22,5 +22,10 @@ test = ["pytest"]
 [project.scripts]
 systems-engineering = "systems_engineering.cli:main"
 
+[tool.pytest.ini_options]
+markers = [
+    "covers_function: mark a test as covering a named function from the functional decomposition",
+]
+
 [tool.setuptools.packages.find]
 where = ["src"]
