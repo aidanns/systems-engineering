@@ -24,23 +24,20 @@ brew install systems-engineering
 
 Prerequisites: Python 3.10+ and [d2](https://d2lang.com/) must be installed.
 
-Download and inspect the installer, then run it:
-
 ```bash
-curl -fsSL https://raw.githubusercontent.com/aidanns/systems-engineering/main/install.sh -o install.sh
-bash install.sh
+curl -fsSL https://raw.githubusercontent.com/aidanns/systems-engineering/main/install.sh | bash
 ```
 
 To install a specific version:
 
 ```bash
-bash install.sh v1.2.3
+curl -fsSL https://raw.githubusercontent.com/aidanns/systems-engineering/main/install.sh | bash -s -- v1.2.3
 ```
 
 To uninstall:
 
 ```bash
-bash install.sh --uninstall
+curl -fsSL https://raw.githubusercontent.com/aidanns/systems-engineering/main/install.sh | bash -s -- --uninstall
 # Or manually: rm -rf ~/.local/share/systems-engineering ~/.local/bin/systems-engineering
 ```
 
